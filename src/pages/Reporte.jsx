@@ -1,48 +1,107 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import client from '../api/client';
 import { useAuth } from '../context/useAuth';
 import * as XLSX from 'xlsx-js-style';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
 
 export default function Reporte() {
   const { user } = useAuth();
+  const reporteRef = useRef(null);
   const [seccion, setSeccion] = useState('');
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
   const [registros, setRegistros] = useState([]);
   const [loading, setLoading] = useState(false);
   const [buscado, setBuscado] = useState(false);
+  const [error, setError] = useState('');
+  const [cargadoInicial, setCargadoInicial] = useState(false);
 
   // Secciones disponibles para el usuario
-  const seccionesDisponibles = useMemo(
-    () => (user?.isAdmin ? ['4A', '4B', '5A', '5B'] : user?.secciones || []),
-    [user]
-  );
+  // Incluye la opción TODAS por defecto.
+  const seccionesDisponibles = useMemo(() => {
+    const base = user?.isAdmin
+      ? ['4A', '4B', '5A', '5B']
+      : user?.secciones || [];
 
+    return ['TODAS', ...base];
+  }, [user]);
+
+  // Valores por defecto: TODAS + fecha de hoy.
   useEffect(() => {
-    if (seccionesDisponibles.length > 0) {
-      setSeccion(seccionesDisponibles[0]);
-    }
-  }, [seccionesDisponibles]);
+    const hoy = new Date().toISOString().split('T')[0];
+    setSeccion('TODAS');
+    setDesde(hoy);
+    setHasta(hoy);
+  }, []);
 
   const buscar = async () => {
+    if (desde && hasta && desde > hasta) {
+      setError("La fecha 'Desde' no puede ser mayor que 'Hasta'.");
+      return;
+    }
+
     setLoading(true);
     setBuscado(true);
+    setError('');
     try {
       const res = await client.get('/reporte-asistencia');
-      let data = res.data;
+      let data = Array.isArray(res.data) ? res.data : [];
 
-      if (seccion) {
+      if (seccion && seccion !== 'TODAS') {
         data = data.filter((r) => r.seccion === seccion);
+      } else if (!user?.isAdmin && Array.isArray(user?.secciones)) {
+        data = data.filter((r) => user.secciones.includes(r.seccion));
       }
       if (desde) data = data.filter((r) => r.fecha >= desde);
       if (hasta) data = data.filter((r) => r.fecha <= hasta);
 
+      data = data.sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
       setRegistros(data);
-    } catch {
+    } catch (err) {
+      console.error('Error al buscar reporte:', err);
       setRegistros([]);
+      setError('No se pudo cargar el reporte. Verifica tu conexión o intenta nuevamente.');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Carga automática inicial: TODAS + fecha de hoy, sin presionar Buscar.
+  useEffect(() => {
+    if (!cargadoInicial && seccion && desde && hasta) {
+      buscar();
+      setCargadoInicial(true);
+    }
+  }, [seccion, desde, hasta, cargadoInicial]);
+
+  const aplicarHoy = () => {
+    const hoy = new Date().toISOString().split('T')[0];
+    setSeccion('TODAS');
+    setDesde(hoy);
+    setHasta(hoy);
+  };
+
+  const limpiarFiltros = () => {
+    const hoy = new Date().toISOString().split('T')[0];
+    setSeccion('TODAS');
+    setDesde(hoy);
+    setHasta(hoy);
+    setRegistros([]);
+    setBuscado(false);
+    setError('');
   };
 
   const total = registros.length;
@@ -51,6 +110,67 @@ export default function Reporte() {
   const tardanzas = registros.filter((r) => r.estado === 'tardanza').length;
   const justificados = registros.filter((r) => r.estado === 'justificado').length;
   const pct = (v) => (total > 0 ? Math.round((v / total) * 100) : 0);
+
+  const chartData = [
+    { name: 'Presentes', value: presentes, color: '#1D9E75' },
+    { name: 'Faltas', value: faltas, color: '#E24B4A' },
+    { name: 'Tardanzas', value: tardanzas, color: '#EF9F27' },
+    { name: 'Justificados', value: justificados, color: '#378ADD' },
+  ];
+
+  const resumenPorSeccion = useMemo(() => {
+    const mapa = {};
+    registros.forEach((r) => {
+      const sec = r.seccion || 'Sin sección';
+      if (!mapa[sec]) {
+        mapa[sec] = { seccion: sec, presentes: 0, faltas: 0, tardanzas: 0, justificados: 0, total: 0 };
+      }
+      mapa[sec].total += 1;
+      if (r.estado === 'presente') mapa[sec].presentes += 1;
+      if (r.estado === 'ausente') mapa[sec].faltas += 1;
+      if (r.estado === 'tardanza') mapa[sec].tardanzas += 1;
+      if (r.estado === 'justificado') mapa[sec].justificados += 1;
+    });
+    return Object.values(mapa).sort((a, b) => a.seccion.localeCompare(b.seccion));
+  }, [registros]);
+
+  const alertasInteligentes = useMemo(() => {
+    const mapa = {};
+    registros.forEach((r) => {
+      const nombre = r.nombre || 'Sin nombre';
+      if (!mapa[nombre]) {
+        mapa[nombre] = { nombre, seccion: r.seccion, total: 0, presentes: 0, faltas: 0, tardanzas: 0, justificados: 0 };
+      }
+      mapa[nombre].total += 1;
+      if (r.estado === 'presente') mapa[nombre].presentes += 1;
+      if (r.estado === 'ausente') mapa[nombre].faltas += 1;
+      if (r.estado === 'tardanza') mapa[nombre].tardanzas += 1;
+      if (r.estado === 'justificado') mapa[nombre].justificados += 1;
+    });
+
+    return Object.values(mapa)
+      .map((item) => {
+        const porcentaje = item.total > 0 ? Math.round((item.presentes / item.total) * 100) : 0;
+        let nivel = '';
+        let mensaje = '';
+
+        if (item.faltas >= 3) {
+          nivel = 'alta';
+          mensaje = `Tiene ${item.faltas} faltas registradas`;
+        } else if (porcentaje < 70 && item.total >= 3) {
+          nivel = 'media';
+          mensaje = `Asistencia baja: ${porcentaje}%`;
+        } else if (item.tardanzas >= 3) {
+          nivel = 'media';
+          mensaje = `Tiene ${item.tardanzas} tardanzas registradas`;
+        }
+
+        return { ...item, porcentaje, nivel, mensaje };
+      })
+      .filter((item) => item.nivel)
+      .sort((a, b) => b.faltas - a.faltas || a.porcentaje - b.porcentaje)
+      .slice(0, 8);
+  }, [registros]);
 
   // Badge: muestra "Falta" en singular (SIAGIE)
   const badge = (estado) => {
@@ -147,7 +267,7 @@ export default function Reporte() {
     ];
 
     const wsData = [
-      [`REPORTE DE ASISTENCIA - SECCIÓN ${seccion}`],
+      [`REPORTE DE ASISTENCIA - ${seccion === 'TODAS' ? 'TODAS LAS SECCIONES' : `SECCIÓN ${seccion}`}`],
       [`Período: ${desde || 'Inicio'} al ${hasta || 'Hoy'}`],
       [`Generado: ${new Date().toLocaleDateString('es-PE')}`],
       [],
@@ -273,7 +393,7 @@ export default function Reporte() {
     ];
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, `Asistencia ${seccion}`);
+    XLSX.utils.book_append_sheet(wb, ws, seccion === 'TODAS' ? 'Asistencia Todas' : `Asistencia ${seccion}`);
 
     // ============ PESTAÑA 3: RESUMEN ESTADÍSTICO ============
     const totalRegs = registros.length;
@@ -325,7 +445,7 @@ export default function Reporte() {
         idxTopFaltas, idxHeaderTopFaltas, idxPorDia, idxHeaderPorDia;
 
     idxTitulo = statsData.length;
-    statsData.push(['', `RESUMEN ESTADÍSTICO - SECCIÓN ${seccion}`]);
+    statsData.push(['', `RESUMEN ESTADÍSTICO - ${seccion === 'TODAS' ? 'TODAS LAS SECCIONES' : `SECCIÓN ${seccion}`}`]);
 
     idxPeriodo = statsData.length;
     statsData.push(['', `Período: ${desde || 'Inicio'} al ${hasta || 'Hoy'}`]);
@@ -589,7 +709,7 @@ export default function Reporte() {
     const maxBarLen = 40;
 
     const graphData = [
-      [`ANÁLISIS VISUAL - SECCIÓN ${seccion}`],
+      [`ANÁLISIS VISUAL - ${seccion === 'TODAS' ? 'TODAS LAS SECCIONES' : `SECCIÓN ${seccion}`}`],
       [`Período: ${desde || 'Inicio'} al ${hasta || 'Hoy'}`],
       [],
       ['DISTRIBUCIÓN GENERAL DE ESTADOS'],
@@ -784,11 +904,48 @@ export default function Reporte() {
 
     XLSX.utils.book_append_sheet(wb, wsGraph, 'Gráfico Visual');
 
-    XLSX.writeFile(wb, `Asistencia_${seccion}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(wb, `Asistencia_${seccion === 'TODAS' ? 'Todas' : seccion}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const exportarPDF = async () => {
+    if (!reporteRef.current || registros.length === 0) return;
+
+    try {
+      const canvas = await html2canvas(reporteRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#f5f6f8',
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth - 16;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 8;
+
+      pdf.addImage(imgData, 'PNG', 8, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        pdf.addPage();
+        position = heightLeft - imgHeight + 8;
+        pdf.addImage(imgData, 'PNG', 8, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`Reporte_Asistencia_${seccion === 'TODAS' ? 'Todas' : seccion}_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (err) {
+      console.error('Error al exportar PDF:', err);
+      setError('No se pudo exportar el PDF. Intenta nuevamente.');
+    }
   };
 
   return (
-    <div>
+    <div ref={reporteRef}>
       <div style={{ background: '#1a4a8a', padding: '12px 1.5rem', borderRadius: '10px', marginBottom: '1.5rem' }}>
         <div style={{ color: 'white', fontSize: '16px', fontWeight: '600' }}>Reporte de Asistencia</div>
         <div style={{ color: '#a8c4e8', fontSize: '12px', marginTop: '2px' }}>Consulta el historial por sección y rango de fechas</div>
@@ -800,7 +957,11 @@ export default function Reporte() {
             <label style={{ display: 'block', fontSize: '11px', color: '#666', marginBottom: '4px', textTransform: 'uppercase' }}>Sección</label>
             <select value={seccion} onChange={(e) => setSeccion(e.target.value)}
               style={{ height: '36px', padding: '0 10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px', background: 'white', minWidth: '120px' }}>
-              {seccionesDisponibles.map((s) => <option key={s} value={s}>{s}</option>)}
+              {seccionesDisponibles.map((s) => (
+                <option key={s} value={s}>
+                  {s === 'TODAS' ? 'Todas' : s}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -814,15 +975,23 @@ export default function Reporte() {
               style={{ height: '36px', padding: '0 10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px' }} />
           </div>
           <button onClick={buscar} disabled={loading}
-            style={{ height: '36px', padding: '0 1.25rem', background: '#1D9E75', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+            style={{ height: '36px', padding: '0 1.25rem', background: '#1D9E75', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
             {loading ? 'Buscando...' : 'Buscar'}
+          </button>
+          <button onClick={aplicarHoy}
+            style={{ height: '36px', padding: '0 12px', background: '#fff7ed', color: '#9a3412', border: '1px solid #fed7aa', borderRadius: '8px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+            Hoy
           </button>
           <button onClick={exportarExcel} disabled={registros.length === 0}
             style={{ height: '36px', padding: '0 1.25rem', background: '#1a4a8a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: registros.length === 0 ? 'not-allowed' : 'pointer', opacity: registros.length === 0 ? 0.5 : 1 }}>
             📊 Exportar Excel
           </button>
+          <button onClick={exportarPDF} disabled={registros.length === 0}
+            style={{ height: '36px', padding: '0 1.25rem', background: '#b91c1c', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: registros.length === 0 ? 'not-allowed' : 'pointer', opacity: registros.length === 0 ? 0.5 : 1 }}>
+            📄 Exportar PDF
+          </button>
           {(desde || hasta) && (
-            <button onClick={() => { setDesde(''); setHasta(''); }}
+            <button onClick={limpiarFiltros}
               style={{ height: '36px', padding: '0 12px', background: 'transparent', color: '#666', border: '1px solid #ddd', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
               Limpiar
             </button>
@@ -830,9 +999,36 @@ export default function Reporte() {
         </div>
       </div>
 
-      {buscado && (
+      {error && (
+        <div style={{ background: '#FCEBEB', color: '#791F1F', border: '1px solid #F7C1C1', borderRadius: '10px', padding: '12px 1rem', marginBottom: '1rem', fontSize: '13px' }}>
+          {error}
+        </div>
+      )}
+
+      {loading && (
+        <div
+          style={{
+            background: 'white',
+            border: '1px solid #e0e0e0',
+            borderRadius: '10px',
+            padding: '2rem',
+            marginBottom: '1rem',
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ fontSize: '28px', marginBottom: '8px' }}>🔄</div>
+          <div style={{ fontSize: '14px', color: '#555', fontWeight: '500' }}>
+            Cargando datos del reporte...
+          </div>
+          <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+            Por favor espera unos segundos
+          </div>
+        </div>
+      )}
+
+      {buscado && !loading && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: '10px', marginBottom: '1rem' }}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 mb-4">
             <div style={{ background: 'white', borderTop: '4px solid #1a4a8a', borderRadius: '8px', padding: '12px 1rem', border: '1px solid #1a4a8a22' }}>
               <div style={{ fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>Total</div>
               <div style={{ fontSize: '24px', fontWeight: '700', color: '#1a4a8a' }}>{total}</div>
@@ -860,34 +1056,140 @@ export default function Reporte() {
             </div>
           </div>
 
+          {registros.length > 0 && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '10px', padding: '1rem' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#1a4a8a', marginBottom: '12px' }}>
+                    🏫 Dashboard por sección
+                  </div>
+                  {resumenPorSeccion.length === 0 ? (
+                    <div style={{ color: '#888', fontSize: '13px' }}>No hay datos por sección.</div>
+                  ) : (
+                    <div style={{ width: '100%', height: 240 }}>
+                      <ResponsiveContainer>
+                        <BarChart data={resumenPorSeccion}>
+                          <XAxis dataKey="seccion" tick={{ fontSize: 11 }} />
+                          <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="presentes" name="Presentes" fill="#1D9E75" radius={[6, 6, 0, 0]} />
+                          <Bar dataKey="faltas" name="Faltas" fill="#E24B4A" radius={[6, 6, 0, 0]} />
+                          <Bar dataKey="tardanzas" name="Tardanzas" fill="#EF9F27" radius={[6, 6, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '10px', padding: '1rem' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#1a4a8a', marginBottom: '12px' }}>
+                    🚨 Alertas inteligentes
+                  </div>
+                  {alertasInteligentes.length === 0 ? (
+                    <div style={{ background: '#E1F5EE', color: '#085041', borderRadius: '8px', padding: '12px', fontSize: '13px' }}>
+                      Sin alertas críticas en el rango seleccionado.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gap: '8px', maxHeight: '240px', overflowY: 'auto' }}>
+                      {alertasInteligentes.map((a) => (
+                        <div key={a.nombre} style={{ border: `1px solid ${a.nivel === 'alta' ? '#F7C1C1' : '#fed7aa'}`, background: a.nivel === 'alta' ? '#FCEBEB' : '#fff7ed', borderRadius: '8px', padding: '10px' }}>
+                          <div style={{ fontSize: '12px', fontWeight: '700', color: a.nivel === 'alta' ? '#791F1F' : '#9a3412' }}>
+                            {a.nombre}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>
+                            Sección {a.seccion} · {a.mensaje} · Asistencia {a.porcentaje}%
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {registros.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '10px', padding: '1rem' }}>
+                <div style={{ fontSize: '14px', fontWeight: '700', color: '#1a4a8a', marginBottom: '12px' }}>
+                  📊 Resumen por estado
+                </div>
+                <div style={{ width: '100%', height: 280 }}>
+                  <ResponsiveContainer>
+                    <BarChart data={chartData}>
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                      <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                      <Tooltip />
+                      <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                        {chartData.map((entry) => (
+                          <Cell key={entry.name} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '10px', padding: '1rem' }}>
+                <div style={{ fontSize: '14px', fontWeight: '700', color: '#1a4a8a', marginBottom: '12px' }}>
+                  🟢 Distribución porcentual
+                </div>
+                <div style={{ width: '100%', height: 280 }}>
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie
+                        data={chartData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={90}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {chartData.map((entry) => (
+                          <Cell key={entry.name} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '10px', overflow: 'hidden' }}>
             {registros.length === 0 ? (
               <div style={{ padding: '3rem', textAlign: 'center', color: '#888', fontSize: '13px' }}>
-                No hay registros para los filtros seleccionados
+                No se encontraron registros para la sección y fechas seleccionadas
               </div>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                <thead style={{ background: '#f8f9fa' }}>
-                  <tr>
-                    <th style={{ padding: '10px 1rem', textAlign: 'left', fontSize: '11px', color: '#666', textTransform: 'uppercase', borderBottom: '1px solid #eee' }}>Fecha</th>
-                    <th style={{ padding: '10px 1rem', textAlign: 'left', fontSize: '11px', color: '#666', textTransform: 'uppercase', borderBottom: '1px solid #eee' }}>Estudiante</th>
-                    <th style={{ padding: '10px 1rem', textAlign: 'left', fontSize: '11px', color: '#666', textTransform: 'uppercase', borderBottom: '1px solid #eee' }}>Sección</th>
-                    <th style={{ padding: '10px 1rem', textAlign: 'left', fontSize: '11px', color: '#666', textTransform: 'uppercase', borderBottom: '1px solid #eee' }}>Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {registros.map((r, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #f5f5f5' }}>
-                      <td style={{ padding: '10px 1rem', color: '#555' }}>{r.fecha}</td>
-                      <td style={{ padding: '10px 1rem', fontWeight: '500' }}>{r.nombre}</td>
-                      <td style={{ padding: '10px 1rem' }}>
-                        <span style={{ background: '#E6F1FB', color: '#0C447C', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: '500' }}>{r.seccion}</span>
-                      </td>
-                      <td style={{ padding: '10px 1rem' }}>{badge(r.estado)}</td>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '420px' }}>
+                  <thead style={{ background: '#f8f9fa' }}>
+                    <tr>
+                      <th style={{ padding: '10px 1rem', textAlign: 'left', fontSize: '11px', color: '#666', textTransform: 'uppercase', borderBottom: '1px solid #eee' }}>Fecha</th>
+                      <th style={{ padding: '10px 1rem', textAlign: 'left', fontSize: '11px', color: '#666', textTransform: 'uppercase', borderBottom: '1px solid #eee' }}>Estudiante</th>
+                      <th style={{ padding: '10px 1rem', textAlign: 'left', fontSize: '11px', color: '#666', textTransform: 'uppercase', borderBottom: '1px solid #eee' }}>Sección</th>
+                      <th style={{ padding: '10px 1rem', textAlign: 'left', fontSize: '11px', color: '#666', textTransform: 'uppercase', borderBottom: '1px solid #eee' }}>Estado</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {registros.map((r, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #f5f5f5' }}>
+                        <td style={{ padding: '10px 1rem', color: '#555' }}>{r.fecha}</td>
+                        <td style={{ padding: '10px 1rem', fontWeight: '500' }}>{r.nombre}</td>
+                        <td style={{ padding: '10px 1rem' }}>
+                          <span style={{ background: '#E6F1FB', color: '#0C447C', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: '500' }}>{r.seccion}</span>
+                        </td>
+                        <td style={{ padding: '10px 1rem' }}>{badge(r.estado)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </>

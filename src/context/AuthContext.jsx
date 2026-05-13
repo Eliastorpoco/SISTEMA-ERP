@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import client, {
   API_VERSION,
   clearStoredSession,
@@ -30,26 +30,41 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => getStoredToken());
   const [user, setUser] = useState(() => crearUsuario(getUsuarioActual()));
 
+  useEffect(() => {
+    const storedToken = getStoredToken();
+    const usuarioActual = getUsuarioActual();
+
+    if (storedToken && usuarioActual) {
+      setToken(storedToken);
+      setUser(crearUsuario(usuarioActual));
+    } else {
+      setToken(null);
+      setUser(null);
+    }
+  }, []);
+
   const login = useCallback(async (username, password) => {
-    const res = await client.post('/login', { username, password });
+    const res = await client.post('/auth/login', { username, password }); // ✅ corregido
     const { access_token } = res.data || {};
 
     if (!access_token) {
-      throw new Error('La API no devolvio access_token');
+      throw new Error('La API no devolvió access_token');
     }
 
     localStorage.setItem('access_token', access_token);
     localStorage.removeItem('token');
     localStorage.setItem('api_version', API_VERSION);
+
     setToken(access_token);
 
     const usuarioActual = getUsuarioActual();
     const userData = crearUsuario(usuarioActual);
+
     if (!userData) {
       clearStoredSession();
       setToken(null);
       setUser(null);
-      throw new Error('Token invalido');
+      throw new Error('Token inválido');
     }
 
     localStorage.setItem(
@@ -62,6 +77,7 @@ export function AuthProvider({ children }) {
         isDocente: userData.isDocente,
       })
     );
+
     setUser(userData);
     return userData;
   }, []);

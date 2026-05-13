@@ -1,40 +1,113 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useState } from 'react';
+import { Rol } from './types/roles';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 
-// Lazy loading: cada pagina se carga solo cuando se necesita
 const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Asistencia = lazy(() => import('./pages/Asistencia'));
 const Reporte = lazy(() => import('./pages/Reporte'));
 const Estudiantes = lazy(() => import('./pages/Estudiantes'));
 const ReporteEstudiante = lazy(() => import('./pages/ReporteEstudiante'));
+const PanelDirector = lazy(() => import('./pages/PanelDirector'));
+// Nuevos módulos
+const PanelDirectorKPI = lazy(() => import('./pages/PanelDirectorKPI'));
+const Finanzas = lazy(() => import('./pages/Finanzas'));
+const Notificaciones = lazy(() => import('./pages/Notificaciones'));
+const Proximamente = lazy(() => import('./pages/Proximamente'));
 
 const privateRoutes = [
   { index: true, element: <Navigate to="/dashboard" replace /> },
-  { path: 'dashboard', element: <Dashboard /> },
-  { path: 'asistencia', element: <Asistencia /> },
-  { path: 'reporte', element: <Reporte /> },
-  { path: 'estudiantes', element: <Estudiantes /> },
-  { path: 'reporte-estudiante', element: <ReporteEstudiante /> },
+
+  { path: 'dashboard', element: <Dashboard />, roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'panel-director', element: <PanelDirector />, roles: [Rol.ADMIN] },
+  // Nuevas rutas
+  { path: 'panel-director-kpi', element: <PanelDirectorKPI />, roles: [Rol.ADMIN] },
+  { path: 'finanzas', element: <Finanzas />, roles: [Rol.ADMIN] },
+  { path: 'notificaciones', element: <Notificaciones />, roles: [Rol.ADMIN, Rol.DOCENTE] },
+
+  { path: 'asistencia', element: <Asistencia />, roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'reporte', element: <Reporte />, roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'estudiantes', element: <Estudiantes />, roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'reporte-estudiante', element: <ReporteEstudiante />, roles: [Rol.ADMIN, Rol.DOCENTE] },
+
+  // Rutas para módulos en construcción (sidebar apuntaba a estas)
+  { path: 'evaluaciones',  element: <Proximamente titulo="Evaluaciones" />,  roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'matricula',     element: <Proximamente titulo="Matrícula" />,     roles: [Rol.ADMIN] },
+  { path: 'incidencias',   element: <Proximamente titulo="Incidencias" />,   roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'docentes',      element: <Proximamente titulo="Docentes" />,      roles: [Rol.ADMIN] },
+  { path: 'horarios',      element: <Proximamente titulo="Horarios" />,      roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'inventario',    element: <Proximamente titulo="Inventario" />,    roles: [Rol.ADMIN] },
+  { path: 'biblioteca',    element: <Proximamente titulo="Biblioteca" />,    roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'presupuesto',   element: <Proximamente titulo="Presupuesto" />,   roles: [Rol.ADMIN] },
+  { path: 'aula-virtual',  element: <Proximamente titulo="Aula Virtual" />,  roles: [Rol.ADMIN, Rol.DOCENTE] },
 ];
 
-// Layout principal con sidebar + area de contenido
 function Layout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed,   setCollapsed]   = useState(false);
+
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <Sidebar />
-      {/* Contenido principal - en móvil tiene padding top para no chocar con el botón hamburguesa */}
-      <main className="flex-1 overflow-auto pt-16 md:pt-6 px-4 md:px-6 pb-6">
-        <Outlet />
-      </main>
+    <div className="flex h-screen overflow-hidden bg-gray-50">
+
+      {/* Overlay oscuro en móvil cuando sidebar abierto */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={[
+        'fixed inset-y-0 left-0 z-50',
+        'transform transition-transform duration-300',
+        'md:relative md:translate-x-0 md:flex-shrink-0',
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+        collapsed ? 'md:w-16' : 'md:w-60',
+        'w-64',
+      ].join(' ')}>
+        <Sidebar
+          collapsed={collapsed}
+          onToggle={() => setCollapsed((c) => !c)}
+          onNavClick={() => setSidebarOpen(false)}
+        />
+      </div>
+
+      {/* Contenido principal */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+
+        {/* Header móvil con botón hamburguesa */}
+        <header className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 sticky top-0 z-30 flex-shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} className="w-4 h-4">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <span className="text-sm font-bold text-gray-900">EduERP</span>
+          </div>
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+            aria-label="Abrir menú"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
+              <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
+            </svg>
+          </button>
+        </header>
+
+        <main className="flex-1 overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }
 
-// Pantalla de carga mientras se cargan las paginas
 function Cargando() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -45,7 +118,19 @@ function Cargando() {
   );
 }
 
-// 404 amigable: redirige al dashboard
+function SinPermiso() {
+  return (
+    <div className="p-6">
+      <div className="bg-white border border-red-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-red-600">Acceso no autorizado</h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Tu rol no tiene permiso para acceder a esta sección.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function RutaNoEncontrada() {
   return <Navigate to="/dashboard" replace />;
 }
@@ -57,6 +142,7 @@ export default function App() {
         <Suspense fallback={<Cargando />}>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/sin-permiso" element={<SinPermiso />} />
 
             <Route
               path="/"
@@ -70,7 +156,15 @@ export default function App() {
                 route.index ? (
                   <Route key="index" index element={route.element} />
                 ) : (
-                  <Route key={route.path} path={route.path} element={route.element} />
+                  <Route
+                    key={route.path}
+                    path={route.path}
+                    element={
+                      <ProtectedRoute roles={route.roles}>
+                        {route.element}
+                      </ProtectedRoute>
+                    }
+                  />
                 )
               )}
             </Route>

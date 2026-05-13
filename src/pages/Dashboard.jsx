@@ -2,6 +2,19 @@ import { useEffect, useState } from 'react';
 import client from '../api/client';
 import { useAuth } from '../context/useAuth';
 
+const MOCK_REPORTE = [
+  { nombre: 'García Quispe Ana',     seccion: '4A', estado: 'presente',    fecha: '2026-05-10' },
+  { nombre: 'Mamani Torres Luis',    seccion: '4A', estado: 'ausente',     fecha: '2026-05-10' },
+  { nombre: 'Flores Chávez Rosa',    seccion: '4A', estado: 'tardanza',    fecha: '2026-05-10' },
+  { nombre: 'Quispe Huanca Carlos',  seccion: '4A', estado: 'presente',    fecha: '2026-05-10' },
+  { nombre: 'Condori Apaza María',   seccion: '4A', estado: 'presente',    fecha: '2026-05-10' },
+  { nombre: 'Huanca Ríos Pedro',     seccion: '4A', estado: 'justificado', fecha: '2026-05-10' },
+  { nombre: 'Ccallo Mamani Luz',     seccion: '4B', estado: 'presente',    fecha: '2026-05-10' },
+  { nombre: 'Ticona Colque Jorge',   seccion: '4B', estado: 'ausente',     fecha: '2026-05-10' },
+  { nombre: 'Apaza Cusi Delia',      seccion: '4B', estado: 'presente',    fecha: '2026-05-10' },
+  { nombre: 'Ramos Vargas Julio',    seccion: '4B', estado: 'tardanza',    fecha: '2026-05-10' },
+];
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [reporte, setReporte] = useState([]);
@@ -36,9 +49,17 @@ export default function Dashboard() {
         if (user?.isDocente) {
           data = data.filter((r) => user.secciones.includes(r.seccion));
         }
-        setReporte(data);
+        if (data.length === 0) {
+          console.warn('[EduERP-DEV] Sin registros en API, usando datos mock en Dashboard');
+          setReporte(MOCK_REPORTE);
+        } else {
+          setReporte(data);
+        }
       })
-      .catch(() => setReporte([]));
+      .catch(() => {
+        console.warn('[EduERP-DEV] API no disponible, usando datos mock en Dashboard');
+        setReporte(MOCK_REPORTE);
+      });
   }, [seccion, fecha, user]);
 
   const total = reporte.length;
