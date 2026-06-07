@@ -1,0 +1,7 @@
+services:
+  erp-frontend:
+    build: .
+    container_name: erp_frontend
+    restart: always
+    ports:
+      - "3000:80"

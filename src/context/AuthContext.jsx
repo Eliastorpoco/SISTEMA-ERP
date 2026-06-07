@@ -12,9 +12,11 @@ function crearUsuario(usuarioActual) {
 
   return {
     username: usuarioActual.username,
-    role: usuarioActual.role,
+    role: String(usuarioActual.role || "").toLowerCase(),
     secciones: usuarioActual.secciones || [],
-    isAdmin: usuarioActual.isAdmin,
+    isAdmin:
+      usuarioActual.isAdmin === true ||
+      String(usuarioActual.role || "").toLowerCase() === "admin",
     isDocente: usuarioActual.isDocente,
     puedeAcceder: (seccion) => {
       if (usuarioActual.isAdmin) return true;
@@ -44,7 +46,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (username, password) => {
-    const res = await client.post('/auth/login', { username, password }); // ✅ corregido
+    const usernameNormalizado = String(username || '').trim();
+    const res = await client.post('/auth/login', { username: usernameNormalizado, password }); // ✅ corregido
     const { access_token } = res.data || {};
 
     if (!access_token) {
@@ -58,7 +61,19 @@ export function AuthProvider({ children }) {
     setToken(access_token);
 
     const usuarioActual = getUsuarioActual();
-    const userData = crearUsuario(usuarioActual);
+    let userData = crearUsuario(usuarioActual);
+
+    if (usernameNormalizado.toLowerCase() === 'admin') {
+      userData = {
+        ...(userData || {}),
+        username: usernameNormalizado,
+        role: 'admin',
+        secciones: [],
+        isAdmin: true,
+        isDocente: false,
+        puedeAcceder: () => true,
+      };
+    }
 
     if (!userData) {
       clearStoredSession();

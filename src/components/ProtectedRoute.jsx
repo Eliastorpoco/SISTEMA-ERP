@@ -1,22 +1,39 @@
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/useAuth';
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../context/useAuth";
 
-export default function ProtectedRoute({ children, roles }) {
-  const { user, token } = useAuth();
-  const location = useLocation();
+const normalizeRole = (role) =>
+  String(role || "").trim().toUpperCase();
 
-  // 🔐 1. Validar autenticación
-  if (!user || !token) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+export default function ProtectedRoute({
+  children,
+  roles = [],
+}) {
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
 
-  // 🔐 2. Validar roles (si se especifican)
-  if (roles && roles.length > 0) {
-    const userRole = user?.role;
+  const userRole = normalizeRole(user.role);
 
-    if (!roles.includes(userRole)) {
-      return <Navigate to="/sin-permiso" replace />;
-    }
+  const allowedRoles = roles.map((r) =>
+    normalizeRole(r)
+  );
+
+  console.log("USER ROLE:", userRole);
+  console.log("ALLOWED ROLES:", allowedRoles);
+
+  if (userRole === "ADMIN" || user?.isAdmin === true) {
+    return children;
+  }
+
+  if (
+    allowedRoles.length > 0 &&
+    !allowedRoles.includes(userRole)
+  ) {
+    return <Navigate to="/sin-permiso" replace />;
   }
 
   return children;

@@ -1,25 +1,27 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 
 export default function Login() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const fromPath = location.state?.from?.pathname || '/dashboard';
-  const redirectPath = fromPath === '/login' ? '/dashboard' : fromPath;
 
   // Redirigir si ya está logueado
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate(redirectPath, { replace: true });
+    if (!isAuthenticated) {
+      return;
     }
-  }, [isAuthenticated, navigate, redirectPath]);
+
+    const userRole = String(user?.role || '').toLowerCase();
+    const isAdmin = userRole === 'admin' || user?.isAdmin === true;
+
+    navigate(isAdmin ? '/dashboard' : '/asistencia', { replace: true });
+  }, [isAuthenticated, navigate, user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,9 +35,25 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await login(username.trim(), password);
+      const trimmedUsername = username.trim();
+      const userData = await login(trimmedUsername, password);
+      const isAdmin =
+        trimmedUsername.toLowerCase() === 'admin' ||
+        String(userData?.role || '').toLowerCase() === 'admin' ||
+        userData?.isAdmin === true;
 
-      navigate(redirectPath, { replace: true });
+      localStorage.setItem(
+        'user',
+        JSON.stringify({
+          username: trimmedUsername,
+          role: isAdmin ? 'admin' : 'docente',
+          isAdmin,
+          isDocente: !isAdmin,
+          secciones: isAdmin ? [] : ['4A', '4B', '5A', '5B'],
+        })
+      );
+
+      navigate(isAdmin ? '/dashboard' : '/asistencia', { replace: true });
     } catch (err) {
       setError('Usuario o contraseña incorrectos');
     } finally {
