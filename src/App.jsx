@@ -17,6 +17,7 @@ const PanelDirectorKPI = lazy(() => import('./pages/PanelDirectorKPI'));
 const Finanzas = lazy(() => import('./pages/Finanzas'));
 const Notificaciones = lazy(() => import('./pages/Notificaciones'));
 const Proximamente = lazy(() => import('./pages/Proximamente'));
+const AIConfigPage  = lazy(() => import('./pages/configuracion/AIConfigPage'));
 
 const privateRoutes = [
   { index: true, element: <Navigate to="/dashboard" replace /> },
@@ -42,6 +43,7 @@ const privateRoutes = [
   { path: 'inventario',    element: <Proximamente titulo="Inventario" />,    roles: [Rol.ADMIN] },
   { path: 'biblioteca',    element: <Proximamente titulo="Biblioteca" />,    roles: [Rol.ADMIN, Rol.DOCENTE] },
   { path: 'presupuesto',   element: <Proximamente titulo="Presupuesto" />,   roles: [Rol.ADMIN] },
+  { path: 'configuracion/ia', element: <AIConfigPage />, roles: [Rol.ADMIN] },
   { path: 'aula-virtual',  element: <Proximamente titulo="Aula Virtual" />,  roles: [Rol.ADMIN, Rol.DOCENTE] },
 ];
 

@@ -200,9 +200,31 @@ const NAV_ITEMS = [
     roles: ['DIRECTOR', 'ADMIN'],
     group: 'Reportes',
   },
+
+// — Configuración ————————————————————————————————
+{
+  label: 'Proveedor IA',
+  to: '/configuracion/ia',
+  icon: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5">
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <rect x="9" y="9" width="6" height="6" rx="1" />
+      <line x1="9" y1="2" x2="9" y2="4" strokeLinecap="round" />
+      <line x1="15" y1="2" x2="15" y2="4" strokeLinecap="round" />
+      <line x1="9" y1="20" x2="9" y2="22" strokeLinecap="round" />
+      <line x1="15" y1="20" x2="15" y2="22" strokeLinecap="round" />
+      <line x1="20" y1="9" x2="22" y2="9" strokeLinecap="round" />
+      <line x1="20" y1="15" x2="22" y2="15" strokeLinecap="round" />
+      <line x1="2" y1="9" x2="4" y2="9" strokeLinecap="round" />
+      <line x1="2" y1="15" x2="4" y2="15" strokeLinecap="round" />
+    </svg>
+  ),
+  roles: ['DIRECTOR', 'ADMIN'],
+  group: 'Configuración',
+},
 ];
 
-const GRUPOS = ['Inicio', 'Académico', 'Administrativo', 'Finanzas', 'Aprendizaje', 'Reportes'];
+const GRUPOS = ['Inicio', 'Académico', 'Administrativo', 'Finanzas', 'Aprendizaje', 'Reportes', 'Configuración'];
 
 export default function Sidebar({ collapsed = false, onToggle, onNavClick }) {
   const { user, logout } = useAuth();
