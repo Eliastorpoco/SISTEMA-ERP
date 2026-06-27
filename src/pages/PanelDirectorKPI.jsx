@@ -1,498 +1,349 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
-  LineChart, Line, ReferenceLine,
-} from 'recharts';
 import client from '../api/client';
-import { useAuth } from '../context/useAuth';
+import {
+  PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  LineChart, Line
+} from 'recharts';
 
-const PIE_COLORS = {
-  'Presentes':    '#10b981',
-  'Faltas':       '#ef4444',
-  'Ausentes':     '#ef4444',   // alias para respuestas antiguas del backend
-  'Tardanzas':    '#f59e0b',
-  'Justificados': '#6366f1',
-  'presente':     '#10b981',
-  'ausente':      '#ef4444',
-  'tardanza':     '#f59e0b',
-  'justificado':  '#6366f1',
+const C = {
+  verde:'#1D9E75', verdeL:'#E1F5EE',
+  rojo:'#E24B4A',  rojoL:'#FCEBEB',
+  naranja:'#EF9F27', naranjaL:'#FFF3DC',
+  azul:'#378ADD',  azulL:'#E6F1FB',
+  primario:'#1a4a8a',
 };
+const PIE_C = [C.verde, C.rojo, C.naranja, C.azul];
+const BARS = [
+  { key:'presentes',    label:'Presentes', initials:'P', color:C.verde,   light:C.verdeL },
+  { key:'ausentes',     label:'Faltas',    initials:'F', color:C.rojo,    light:C.rojoL  },
+  { key:'tardanzas',    label:'Tardanzas', initials:'T', color:C.naranja, light:C.naranjaL },
+  { key:'justificados', label:'Justif.',   initials:'J', color:C.azul,    light:C.azulL  },
+];
+const SECCIONES = ['4A','4B','5A','5B','6A','6B'];
 
-const mockTendencia7Dias = () => {
-  const hoy = new Date();
-  const dias = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(hoy);
-    d.setDate(hoy.getDate() - i);
-    if (d.getDay() === 0 || d.getDay() === 6) continue;
-    dias.push({
-      fecha:      d.toISOString().split('T')[0],
-      porcentaje: Math.floor(Math.random() * 13) + 82,
-    });
-  }
-  return dias;
-};
+export default function PanelDirectorKPI() {
+  const [registros, setRegistros] = useState([]);
+  const [kpi,       setKpi]       = useState({ estudiantes:0, docentes:0, cursos:0 });
+  const [loading,   setLoading]   = useState(true);
+  const [hora,      setHora]      = useState('');
+  const [seccion,   setSeccion]   = useState('TODAS');
+  const [fecha,     setFecha]     = useState('');
 
-const MOCK_DASHBOARD = {
-  total_estudiantes: 64,
-  asistencia_hoy: 87,
-  tardanzas_mes: 23,
-  inasistencias_mes: 18,
-  detalle: [
-    { seccion: '4A', total: 16, presentes: 15, porcentaje: 94 },
-    { seccion: '4B', total: 16, presentes: 13, porcentaje: 81 },
-    { seccion: '5A', total: 16, presentes: 14, porcentaje: 88 },
-    { seccion: '5B', total: 16, presentes: 12, porcentaje: 75 },
-  ],
-};
+  useEffect(() => { cargar(); }, [seccion, fecha]);
 
-const MOCK_KPI = {
-  por_seccion: [
-    { seccion: '4A', porcentaje: 94 },
-    { seccion: '4B', porcentaje: 81 },
-    { seccion: '5A', porcentaje: 88 },
-    { seccion: '5B', porcentaje: 75 },
-  ],
-  presentes: 54,
-  ausentes: 6,
-  tardanzas: 4,
-  justificados: 0,
-  tasa_asistencia: 87,
-  tendencia_7_dias: [
-    { fecha: '2026-05-05', porcentaje: 89 },
-    { fecha: '2026-05-06', porcentaje: 85 },
-    { fecha: '2026-05-07', porcentaje: 91 },
-    { fecha: '2026-05-08', porcentaje: 84 },
-    { fecha: '2026-05-09', porcentaje: 88 },
-    { fecha: '2026-05-10', porcentaje: 92 },
-    { fecha: '2026-05-11', porcentaje: 87 },
-  ],
-};
-
-const StatCard = ({ label, value, sub, color = 'indigo' }) => {
-  const colors = {
-    indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-    green:  'bg-emerald-50 text-emerald-700 border-emerald-200',
-    amber:  'bg-amber-50 text-amber-700 border-amber-200',
-    red:    'bg-red-50 text-red-700 border-red-200',
+  const cargar = async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (seccion !== 'TODAS') params.seccion = seccion;
+      if (fecha) params.fecha = fecha;
+      const [r1, r2] = await Promise.allSettled([
+        client.get('/reporte-asistencia', { params }),
+        client.get('/dashboard/directivo'),
+      ]);
+      if (r1.status === 'fulfilled')
+        setRegistros(Array.isArray(r1.value.data) ? r1.value.data : []);
+      if (r2.status === 'fulfilled') {
+        const d = r2.value.data || {};
+        setKpi({
+          estudiantes: d.total_estudiantes ?? d.estudiantes ?? 0,
+          docentes:    d.total_docentes    ?? d.docentes    ?? 0,
+          cursos:      d.total_cursos      ?? d.cursos      ?? 0,
+        });
+      }
+    } catch(e) { console.error(e); }
+    finally { setLoading(false); setHora(new Date().toLocaleTimeString('es-PE')); }
   };
-  return (
-    <div className={`rounded-2xl border p-5 ${colors[color]}`}>
-      <p className="text-xs font-semibold uppercase tracking-widest opacity-60">{label}</p>
-      <p className="text-3xl font-bold mt-1">{value ?? '—'}</p>
-      {sub && <p className="text-xs mt-1 opacity-70">{sub}</p>}
-    </div>
-  );
-};
 
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-lg px-4 py-3 text-sm">
-      <p className="font-semibold text-gray-700 mb-1">{label}</p>
-      {payload.map((p) => (
-        <p key={p.name} style={{ color: p.color }}>
-          {p.name}: <span className="font-bold">{p.value}%</span>
-        </p>
-      ))}
-    </div>
-  );
-};
-
-export default function KPIDirectivo() {
-  useAuth();
-  const [dashboard, setDashboard] = useState(null);
-  const [kpi, setKpi] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [resDash, resKpi] = await Promise.all([
-          client.get('/dashboard/directivo'),
-          client.get('/dashboard/kpi/asistencia'),
-        ]);
-
-        const rawDash = resDash.data ?? {};
-        const rawKpi  = resKpi.data  ?? {};
-
-        // asistencia_hoy puede venir como número o como objeto { tasa_asistencia, tardanza, ... }
-        const hoy   = rawDash.asistencia_hoy;
-        const isObj = hoy != null && typeof hoy === 'object';
-
-        const normalDash = {
-          total_estudiantes: rawDash.total_estudiantes ?? rawDash.estudiantes ?? rawDash.total ?? 0,
-          asistencia_hoy:    isObj ? hoy.tasa_asistencia        : (hoy ?? rawDash.tasa_asistencia ?? rawDash.porcentaje_hoy ?? 0),
-          tardanzas_mes:     isObj ? hoy.tardanza                : (rawDash.tardanzas_mes    ?? rawDash.tardanzas    ?? 0),
-          inasistencias_mes: isObj ? hoy.ausente                 : (rawDash.inasistencias_mes ?? rawDash.ausentes    ?? rawDash.faltas ?? 0),
-          detalle:           rawDash.detalle ?? [],
-        };
-
-        const totalEst   = rawDash.total_estudiantes ?? 0;
-        const overallPct = isObj ? (hoy.tasa_asistencia ?? 0) : (hoy ?? 0);
-
-        const normalKpi = {
-          por_seccion: (rawKpi.por_seccion ?? []).map((s) => ({
-            seccion:    s.seccion,
-            porcentaje: s.porcentaje != null
-              ? s.porcentaje
-              : (s.total != null && totalEst > 0
-                  ? Math.round((s.total / totalEst) * overallPct)
-                  : 0),
-          })),
-          distribucion: rawKpi.distribucion ?? [
-            { name: 'Presentes',    value: rawKpi.presentes                   ?? 0 },
-            { name: 'Faltas',       value: rawKpi.faltas ?? rawKpi.ausentes   ?? 0 },
-            { name: 'Tardanzas',    value: rawKpi.tardanzas                   ?? 0 },
-            { name: 'Justificados', value: rawKpi.justificados                ?? 0 },
-          ],
-          tendencia_7_dias: rawKpi.tendencia_7_dias?.length > 0
-            ? rawKpi.tendencia_7_dias
-            : mockTendencia7Dias(),
-        };
-
-        setDashboard(normalDash);
-        setKpi(normalKpi);
-      } catch (err) {
-        console.warn('[EduERP-DEV] API no disponible, usando datos mock en PanelDirectorKPI', err);
-        setDashboard(MOCK_DASHBOARD);
-        setKpi(MOCK_KPI);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  const tendencia = useMemo(() => kpi?.tendencia_7_dias ?? [], [kpi]);
-
-  const alertas = useMemo(() => {
-    const lista = [];
-    const detalle = dashboard?.detalle?.length
-      ? dashboard.detalle
-      : (kpi?.por_seccion ?? []);
-
-    detalle.forEach((sec) => {
-      const pct    = sec.porcentaje ?? sec.porcentaje_asistencia ?? 0;
-      const nombre = sec.seccion ?? sec.nombre ?? 'Sección';
-
-      if (pct < 75) {
-        lista.push({
-          nivel:   'critico',
-          seccion: nombre,
-          pct,
-          msg: `Asistencia crítica: ${pct}% — Riesgo alto de deserción`,
-        });
-      } else if (pct < 85) {
-        lista.push({
-          nivel:   'advertencia',
-          seccion: nombre,
-          pct,
-          msg: `Asistencia baja: ${pct}% — Requiere seguimiento`,
-        });
-      }
+  const tots = useMemo(() => {
+    const t = { presentes:0, ausentes:0, tardanzas:0, justificados:0, total:0 };
+    registros.forEach(r => {
+      t.total++;
+      if (r.estado==='presente')    t.presentes++;
+      else if (r.estado==='ausente')     t.ausentes++;
+      else if (r.estado==='tardanza')    t.tardanzas++;
+      else if (r.estado==='justificado') t.justificados++;
     });
+    t.pct = t.total > 0 ? Math.round((t.presentes/t.total)*100) : 0;
+    return t;
+  }, [registros]);
 
-    return lista.sort((a, b) => a.pct - b.pct);
-  }, [dashboard, kpi]);
+  const pct = v => tots.total > 0 ? Math.round((v/tots.total)*100) : 0;
+  const maxVal = Math.max(tots.presentes, tots.ausentes, tots.tardanzas, tots.justificados, 1);
+  const CHART_H = 200;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex gap-2">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="w-3 h-3 rounded-full bg-indigo-400 animate-bounce"
-              style={{ animationDelay: `${i * 0.15}s` }}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const yTicks = () => {
+    const step = Math.max(Math.ceil(maxVal/5), 1);
+    return Array.from({length:6}, (_,i) => i*step);
+  };
 
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-red-700">
-          <p className="font-semibold">Error al cargar</p>
-          <p className="text-sm mt-1">{error}</p>
-        </div>
-      </div>
-    );
-  }
+  const pieData = useMemo(() => BARS
+    .map(b => ({ name:b.label, value:tots[b.key] }))
+    .filter(d => d.value > 0), [tots]);
 
-  const stats   = dashboard || {};
-  const kpiData = kpi || {};
+  const porSeccion = useMemo(() => {
+    const m = {};
+    registros.forEach(r => {
+      const k = r.seccion || r.seccion_nombre || 'Sin sección';
+      if (!m[k]) m[k] = { seccion:k, presentes:0, ausentes:0, tardanzas:0, total:0 };
+      m[k].total++;
+      if (r.estado==='presente')  m[k].presentes++;
+      if (r.estado==='ausente')   m[k].ausentes++;
+      if (r.estado==='tardanza')  m[k].tardanzas++;
+    });
+    return Object.values(m).map(s => ({
+      ...s, pct: s.total>0 ? Math.round((s.presentes/s.total)*100) : 0,
+    })).sort((a,b) => b.pct - a.pct);
+  }, [registros]);
 
-  const barData = kpiData.por_seccion ?? kpiData.secciones ?? [];
+  const tendencia = useMemo(() => {
+    const m = {};
+    registros.forEach(r => {
+      const f = r.fecha ? r.fecha.slice(0,10) : 'Sin fecha';
+      if (!m[f]) m[f] = { fecha:f, presentes:0, total:0 };
+      m[f].total++;
+      if (r.estado==='presente') m[f].presentes++;
+    });
+    return Object.values(m)
+      .map(d => ({ fecha:d.fecha.slice(5), pct:d.total>0?Math.round((d.presentes/d.total)*100):0 }))
+      .sort((a,b) => a.fecha.localeCompare(b.fecha)).slice(-14);
+  }, [registros]);
 
-  const pieData = (kpiData.distribucion ?? kpiData.estados ?? [
-    { name: 'Presentes',    value: kpiData.presentes                           ?? 0 },
-    { name: 'Faltas',       value: kpiData.faltas ?? kpiData.ausentes          ?? 0 },
-    { name: 'Tardanzas',    value: kpiData.tardanzas                           ?? 0 },
-    { name: 'Justificados', value: kpiData.justificados                        ?? 0 },
-  ]).filter((d) => d.value > 0);
+  const ranking = useMemo(() => {
+    const m = {};
+    registros.forEach(r => {
+      const k = r.estudiante_id || r.estudiante || 'N/A';
+      const nombre = r.nombre_completo || r.estudiante_nombre || r.nombre || k;
+      if (!m[k]) m[k] = { nombre, faltas:0 };
+      if (r.estado==='ausente') m[k].faltas++;
+    });
+    return Object.values(m).filter(x=>x.faltas>0).sort((a,b)=>b.faltas-a.faltas).slice(0,5);
+  }, [registros]);
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto font-sans">
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Panel Directivo</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Indicadores clave de asistencia institucional</p>
+      {/* HEADER AZUL */}
+      <div className="rounded-xl mb-5 p-4 md:px-6 md:py-4" style={{background:'linear-gradient(135deg,#1a4a8a 0%,#378ADD 100%)'}}>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <div className="text-white text-lg font-bold">Panel Directivo</div>
+            <div className="text-blue-200 text-xs mt-0.5">Indicadores institucionales en tiempo real — ERP Educativo · MEFA-IAH</div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-blue-200 text-xs">Actualizado: {hora}</div>
+            <button onClick={cargar}
+              className="h-9 px-4 rounded-lg border border-blue-300 bg-white/10 text-white text-sm cursor-pointer hover:bg-white/20 transition">
+              ↻ Actualizar
+            </button>
+          </div>
         </div>
-        <span className="hidden md:inline-flex items-center gap-2 text-xs bg-indigo-100 text-indigo-700 font-semibold px-3 py-1.5 rounded-full">
-          <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-          En vivo
-        </span>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard
-          label="Total Estudiantes"
-          value={stats.total_estudiantes}
-          sub="Matriculados activos"
-          color="indigo"
-        />
-        <StatCard
-          label="Asistencia Hoy"
-          value={stats.asistencia_hoy != null ? `${stats.asistencia_hoy}%` : null}
-          sub="Promedio institucional"
-          color="green"
-        />
-        <StatCard
-          label="Tardanzas"
-          value={stats.tardanzas_mes}
-          sub="Este mes"
-          color="amber"
-        />
-        <StatCard
-          label="Inasistencias"
-          value={stats.inasistencias_mes}
-          sub="Este mes"
-          color="red"
-        />
-      </div>
-
-      {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-
-        {/* BarChart — asistencia por sección */}
-        <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider">
-            Asistencia por Sección
-          </h2>
-          {barData.length === 0 ? (
-            <div className="flex items-center justify-center h-56 text-gray-400 text-sm">
-              Sin datos disponibles
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={barData} margin={{ top: 4, right: 8, left: -16, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="seccion"
-                  tick={{ fontSize: 11, fill: '#6b7280' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 11, fill: '#6b7280' }}
-                  axisLine={false}
-                  tickLine={false}
-                  domain={[0, 100]}
-                  tickFormatter={(v) => `${v}%`}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar
-                  dataKey="porcentaje"
-                  name="Asistencia"
-                  fill="#6366f1"
-                  radius={[6, 6, 0, 0]}
-                  maxBarSize={48}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-
-        {/* PieChart — distribución estados */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider">
-            Distribución
-          </h2>
-          {pieData.every((d) => !d.value) ? (
-            <div className="flex items-center justify-center h-56 text-gray-400 text-sm">
-              Sin datos disponibles
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="45%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={3}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, i) => (
-                    <Cell
-                      key={i}
-                      fill={
-                        PIE_COLORS[entry.name] ??
-                        PIE_COLORS[entry.name?.toLowerCase()] ??
-                        ['#10b981', '#ef4444', '#f59e0b', '#6366f1'][i % 4]
-                      }
-                    />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v) => [`${v}`, '']} />
-                <Legend
-                  iconType="circle"
-                  iconSize={8}
-                  formatter={(value) => (
-                    <span style={{ fontSize: '11px', color: PIE_COLORS[value] ?? '#6b7280' }}>
-                      {value}
-                    </span>
-                  )}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+        {/* FILTROS */}
+        <div className="flex items-end gap-3 mt-3 flex-wrap">
+          <div>
+            <div className="text-blue-200 text-[10px] mb-1 uppercase">Sección</div>
+            <select value={seccion} onChange={e=>{setSeccion(e.target.value);setFecha('');}}
+              className="h-9 px-3 rounded-lg border-0 text-sm font-medium bg-white/90 text-[#1a4a8a] cursor-pointer">
+              <option value="TODAS">Todas</option>
+              {SECCIONES.map(s=><option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <div className="text-blue-200 text-[10px] mb-1 uppercase">Fecha</div>
+            <input type="date" value={fecha} onChange={e=>setFecha(e.target.value)}
+              className="h-9 px-3 rounded-lg border-0 text-sm bg-white/90 text-[#1a4a8a]"/>
+          </div>
+          {(fecha || seccion !== 'TODAS') && (
+            <button onClick={()=>{setFecha('');setSeccion('TODAS');}}
+              className="h-9 px-3 rounded-lg border border-blue-300 bg-transparent text-white text-xs cursor-pointer hover:bg-white/10 transition">
+              Ver todo
+            </button>
           )}
         </div>
       </div>
 
-      {/* Tabla detalle si viene de la API */}
-      {Array.isArray(stats.detalle) && stats.detalle.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Detalle por Sección</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  {Object.keys(stats.detalle[0]).map((k) => (
-                    <th key={k} className="text-left text-xs font-semibold text-gray-500 uppercase px-5 py-3 tracking-wider">
-                      {k}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {stats.detalle.map((row, i) => (
-                  <tr key={i} className="hover:bg-gray-50 transition-colors">
-                    {Object.values(row).map((val, j) => (
-                      <td key={j} className="px-5 py-3 text-gray-700">{val ?? '—'}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {/* KPI FILA 1 */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+        <div className="col-span-2 lg:col-span-1 rounded-lg px-4 py-3 text-white"
+          style={{background:'linear-gradient(135deg,#1a4a8a 0%,#378ADD 100%)'}}>
+          <div className="text-xs opacity-80 uppercase tracking-wider">Asistencia hoy</div>
+          <div className="text-4xl font-bold mt-1">{tots.pct}%</div>
+          <div className="text-xs opacity-80 mt-0.5">{tots.presentes} de {tots.total} presentes</div>
         </div>
-      )}
-
-      {/* LineChart — Tendencia 7 días */}
-      {tendencia.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">
-              Tendencia — Últimos 7 Días
-            </h2>
-            <span className="text-xs text-gray-400">% asistencia diaria</span>
+        {BARS.map(b => (
+          <div key={b.key} className="bg-white rounded-lg px-4 py-3 border"
+            style={{borderTop:`4px solid ${b.color}`}}>
+            <div className="text-[11px] text-gray-500 uppercase tracking-wider">{b.label}</div>
+            <div className="text-3xl font-bold mt-1" style={{color:b.color}}>{tots[b.key]}</div>
+            <div className="text-xs text-gray-400 mt-0.5">{pct(tots[b.key])}% del total</div>
           </div>
-          <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={tendencia} margin={{ top: 4, right: 16, left: -16, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis
-                dataKey="fecha"
-                tick={{ fontSize: 11, fill: '#6b7280' }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => {
-                  if (!v) return '';
-                  const d = new Date(v + 'T12:00:00');
-                  return `${d.getDate()}/${d.getMonth() + 1}`;
-                }}
-              />
-              <YAxis
-                domain={[80, 100]}
-                tick={{ fontSize: 11, fill: '#6b7280' }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => `${v}%`}
-              />
-              <Tooltip
-                formatter={(v) => [`${v}%`, 'Asistencia']}
-                labelFormatter={(l) => new Date(l).toLocaleDateString('es-PE')}
-              />
-              <ReferenceLine
-                y={85}
-                stroke="#ef4444"
-                strokeDasharray="4 4"
-                label={{ value: 'Mín 85%', fill: '#ef4444', fontSize: 10, position: 'right' }}
-              />
-              <Line
-                type="monotone"
-                dataKey="porcentaje"
-                stroke="#6366f1"
-                strokeWidth={2.5}
-                dot={{ fill: '#6366f1', r: 4, strokeWidth: 0 }}
-                activeDot={{ r: 6, fill: '#4f46e5' }}
-                connectNulls={true}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+        ))}
+      </div>
 
-      {/* Alertas de Deserción Escolar */}
-      {alertas.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">
-            Alertas de Deserción Escolar
-          </h2>
-          <div className="space-y-2">
-            {alertas.map((a, i) => (
-              <div
-                key={i}
-                className={`flex items-start sm:items-center gap-3 p-3 rounded-xl border text-sm ${
-                  a.nivel === 'critico'
-                    ? 'bg-red-50 border-red-200'
-                    : 'bg-amber-50 border-amber-200'
-                }`}
-              >
-                <span className="text-base flex-shrink-0 mt-0.5 sm:mt-0">
-                  {a.nivel === 'critico' ? '🔴' : '🟡'}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-800 text-sm">Sección {a.seccion}</p>
-                  <p className={`text-xs truncate ${
-                    a.nivel === 'critico' ? 'text-red-600' : 'text-amber-600'
-                  }`}>
-                    {a.msg}
-                  </p>
-                </div>
-                <span className={`font-bold text-sm flex-shrink-0 ${
-                  a.nivel === 'critico' ? 'text-red-600' : 'text-amber-700'
-                }`}>
-                  {a.pct}%
-                </span>
+      {/* KPI FILA 2 */}
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {[
+          { label:'Estudiantes', val:kpi.estudiantes||tots.total, color:C.primario, icon:'👥' },
+          { label:'Docentes',    val:kpi.docentes,                color:C.azul,     icon:'👨‍🏫' },
+          { label:'Cursos',      val:kpi.cursos,                  color:C.naranja,  icon:'📚' },
+        ].map(k => (
+          <div key={k.label} className="bg-white rounded-lg px-4 py-3 border border-gray-100 flex items-center gap-3">
+            <span className="text-2xl">{k.icon}</span>
+            <div>
+              <div className="text-xs text-gray-500 uppercase tracking-wider">{k.label}</div>
+              <div className="text-2xl font-bold" style={{color:k.color}}>{k.val}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* GRÁFICO BARRAS ESTILO DASHBOARD */}
+      <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 mb-4">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-5 gap-2">
+          <div>
+            <div className="text-[15px] font-semibold text-[#1a4a8a]">Resultado por estado de asistencia</div>
+            <div className="text-xs text-gray-400 mt-0.5">
+              {seccion !== 'TODAS' ? `Sección ${seccion}` : 'Todas las secciones'} · {tots.total} registros
+            </div>
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            {BARS.map(b => (
+              <div key={b.key} className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full" style={{background:b.color}}/>
+                <span className="text-[11px] text-gray-500">{b.label}</span>
               </div>
             ))}
           </div>
         </div>
-      )}
+        {tots.total === 0 ? (
+          <div className="text-center text-gray-400 py-10 text-sm">Sin registros de asistencia</div>
+        ) : (
+          <div className="flex items-stretch">
+            <div className="flex flex-col justify-between pr-2 pb-[52px] min-w-[28px]">
+              {[...yTicks()].reverse().map(t => (
+                <div key={t} className="text-[10px] text-gray-400 text-right">{t}</div>
+              ))}
+            </div>
+            <div className="flex-1 relative">
+              <div className="absolute top-0 left-0 right-0 flex flex-col justify-between pointer-events-none" style={{bottom:'52px'}}>
+                {yTicks().map(t => <div key={t} className="border-t border-dashed border-gray-100 w-full"/>)}
+              </div>
+              <div className="grid grid-cols-4 gap-4 items-end relative z-10" style={{height:`${CHART_H+52}px`}}>
+                {BARS.map(bar => {
+                  const h = maxVal > 0 ? Math.max((tots[bar.key]/maxVal)*CHART_H, 8) : 8;
+                  return (
+                    <div key={bar.key} className="flex flex-col items-center justify-end h-full">
+                      <div className="hidden md:flex w-11 h-11 rounded-full items-center justify-center text-base font-extrabold mb-1.5"
+                        style={{background:bar.light, border:`3px solid ${bar.color}`, color:bar.color, boxShadow:`0 2px 8px ${bar.color}44`}}>
+                        {bar.initials}
+                      </div>
+                      <div className="text-[13px] font-bold mb-1" style={{color:bar.color}}>{tots[bar.key]}</div>
+                      <div className="w-3/4 rounded-t-md transition-all duration-700"
+                        style={{height:`${h}px`, background:`linear-gradient(180deg,${bar.color}cc 0%,${bar.color} 100%)`, boxShadow:`0 -2px 12px ${bar.color}44`}}/>
+                      <div className="h-0.5 w-full bg-gray-200"/>
+                      <div className="mt-2 text-center">
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center mx-auto mb-1"
+                          style={{background:bar.light, border:`2px solid ${bar.color}44`}}>
+                          <span className="text-base font-extrabold" style={{color:bar.color}}>{bar.initials}</span>
+                        </div>
+                        <div className="text-[11px] text-gray-500 font-medium">{bar.label}</div>
+                        <div className="text-[10px] text-gray-400">{pct(tots[bar.key])}%</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* PIE + SECCIONES */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6">
+          <div className="text-[15px] font-semibold text-[#1a4a8a] mb-4">Distribución de asistencia</div>
+          {pieData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={pieData} dataKey="value" cx="50%" cy="50%"
+                  outerRadius={85} innerRadius={45} paddingAngle={3}
+                  label={({percent})=>`${Math.round(percent*100)}%`}>
+                  {pieData.map((_,i)=><Cell key={i} fill={PIE_C[i%PIE_C.length]}/>)}
+                </Pie>
+                <Tooltip/><Legend/>
+              </PieChart>
+            </ResponsiveContainer>
+          ) : <div className="text-center text-gray-400 py-16 text-sm">Sin datos</div>}
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6">
+          <div className="text-[15px] font-semibold text-[#1a4a8a] mb-4">Asistencia por sección</div>
+          {porSeccion.length > 0 ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={porSeccion} margin={{top:5,right:10,left:0,bottom:5}}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/>
+                <XAxis dataKey="seccion" tick={{fontSize:12}}/>
+                <YAxis tickFormatter={v=>`${v}`} tick={{fontSize:11}}/>
+                <Tooltip/>
+                <Bar dataKey="presentes" name="Presentes" fill={C.verde}   radius={[4,4,0,0]}/>
+                <Bar dataKey="ausentes"  name="Faltas"    fill={C.rojo}    radius={[4,4,0,0]}/>
+                <Bar dataKey="tardanzas" name="Tardanzas" fill={C.naranja} radius={[4,4,0,0]}/>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : <div className="text-center text-gray-400 py-16 text-sm">Sin datos por sección</div>}
+        </div>
+      </div>
+
+      {/* TENDENCIA + RANKING */}
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 mb-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6">
+          <div className="text-[15px] font-semibold text-[#1a4a8a] mb-4">Tendencia — últimos 14 días</div>
+          {tendencia.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={tendencia} margin={{top:5,right:20,left:0,bottom:5}}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/>
+                <XAxis dataKey="fecha" tick={{fontSize:11}}/>
+                <YAxis domain={[0,100]} tickFormatter={v=>`${v}%`} tick={{fontSize:11}}/>
+                <Tooltip formatter={v=>[`${v}%`,'Asistencia']}/>
+                <Line type="monotone" dataKey="pct" stroke={C.primario}
+                  strokeWidth={2.5} dot={{r:4,fill:C.primario}} activeDot={{r:6}}/>
+              </LineChart>
+            </ResponsiveContainer>
+          ) : <div className="text-center text-gray-400 py-16 text-sm">Sin datos históricos</div>}
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6">
+          <div className="text-[15px] font-semibold text-[#1a4a8a] mb-4">🚨 Más faltas</div>
+          {ranking.length > 0 ? (
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="text-left py-2 px-3 text-xs text-gray-500 font-semibold">Estudiante</th>
+                  <th className="text-center py-2 px-3 text-xs text-gray-500 font-semibold">Faltas</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ranking.map((r,i)=>(
+                  <tr key={i} className="border-t border-gray-100">
+                    <td className="py-2 px-3 text-gray-700 text-xs">{r.nombre}</td>
+                    <td className="py-2 px-3 text-center">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold"
+                        style={{background:r.faltas>=3?C.rojoL:C.naranjaL, color:r.faltas>=3?C.rojo:C.naranja}}>
+                        {r.faltas}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : <div className="text-center text-gray-400 py-10 text-sm">Sin faltas registradas</div>}
+        </div>
+      </div>
+
+      {/* FOOTER */}
+      <div className="bg-white border border-gray-100 rounded-xl px-5 py-3 flex justify-between items-center text-xs text-gray-400 mb-4">
+        <span>📋 ERP Educativo · Marco MEFA-IAH · RVM N° 094-2020-MINEDU</span>
+        <span>Sistema Multi-Tenant · Datos en tiempo real</span>
+      </div>
 
     </div>
   );
