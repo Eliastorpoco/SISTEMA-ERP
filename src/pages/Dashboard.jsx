@@ -4,13 +4,13 @@ import { useAuth } from '../context/useAuth';
 
 const MOCK_REPORTE = [
   { nombre: 'García Quispe Ana',     seccion: '4A', estado: 'presente',    fecha: '2026-05-10' },
-  { nombre: 'Mamani Torres Luis',    seccion: '4A', estado: 'ausente',     fecha: '2026-05-10' },
+  { nombre: 'Mamani Torres Luis',    seccion: '4A', estado: 'falta',     fecha: '2026-05-10' },
   { nombre: 'Flores Chávez Rosa',    seccion: '4A', estado: 'tardanza',    fecha: '2026-05-10' },
   { nombre: 'Quispe Huanca Carlos',  seccion: '4A', estado: 'presente',    fecha: '2026-05-10' },
   { nombre: 'Condori Apaza María',   seccion: '4A', estado: 'presente',    fecha: '2026-05-10' },
   { nombre: 'Huanca Ríos Pedro',     seccion: '4A', estado: 'justificado', fecha: '2026-05-10' },
   { nombre: 'Ccallo Mamani Luz',     seccion: '4B', estado: 'presente',    fecha: '2026-05-10' },
-  { nombre: 'Ticona Colque Jorge',   seccion: '4B', estado: 'ausente',     fecha: '2026-05-10' },
+  { nombre: 'Ticona Colque Jorge',   seccion: '4B', estado: 'falta',     fecha: '2026-05-10' },
   { nombre: 'Apaza Cusi Delia',      seccion: '4B', estado: 'presente',    fecha: '2026-05-10' },
   { nombre: 'Ramos Vargas Julio',    seccion: '4B', estado: 'tardanza',    fecha: '2026-05-10' },
 ];
@@ -64,7 +64,7 @@ export default function Dashboard() {
 
   const total = reporte.length;
   const presentes = reporte.filter((r) => r.estado === 'presente').length;
-  const ausentes = reporte.filter((r) => r.estado === 'ausente').length;
+  const ausentes = reporte.filter((r) => r.estado === 'falta').length;
   const tardanzas = reporte.filter((r) => r.estado === 'tardanza').length;
   const justificados = reporte.filter((r) => r.estado === 'justificado').length;
   const pct = (v) => (total > 0 ? Math.round((v / total) * 100) : 0);

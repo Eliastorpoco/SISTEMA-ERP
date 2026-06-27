@@ -61,7 +61,7 @@ export default function PanelDirectorKPI() {
     registros.forEach(r => {
       t.total++;
       if (r.estado==='presente')    t.presentes++;
-      else if (r.estado==='ausente')     t.ausentes++;
+      else if (r.estado==='falta')     t.ausentes++;
       else if (r.estado==='tardanza')    t.tardanzas++;
       else if (r.estado==='justificado') t.justificados++;
     });
@@ -89,7 +89,7 @@ export default function PanelDirectorKPI() {
       if (!m[k]) m[k] = { seccion:k, presentes:0, ausentes:0, tardanzas:0, total:0 };
       m[k].total++;
       if (r.estado==='presente')  m[k].presentes++;
-      if (r.estado==='ausente')   m[k].ausentes++;
+      if (r.estado==='falta')   m[k].ausentes++;
       if (r.estado==='tardanza')  m[k].tardanzas++;
     });
     return Object.values(m).map(s => ({
@@ -116,7 +116,7 @@ export default function PanelDirectorKPI() {
       const k = r.estudiante_id || r.estudiante || 'N/A';
       const nombre = r.nombre_completo || r.estudiante_nombre || r.nombre || k;
       if (!m[k]) m[k] = { nombre, faltas:0 };
-      if (r.estado==='ausente') m[k].faltas++;
+      if (r.estado==='falta') m[k].faltas++;
     });
     return Object.values(m).filter(x=>x.faltas>0).sort((a,b)=>b.faltas-a.faltas).slice(0,5);
   }, [registros]);
