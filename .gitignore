@@ -28,3 +28,10 @@ dist-ssr
 *.sln
 *.sw?
 *.tar.gz
+
+# Local backups and broken files
+*.bak
+*.bak.*
+*.bak_*
+*.roto_*
+respaldos_*/
