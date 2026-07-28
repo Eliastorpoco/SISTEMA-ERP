@@ -125,41 +125,37 @@ export default function PanelDirectorKPI() {
     <div className="max-w-7xl mx-auto font-sans">
 
       {/* HEADER AZUL */}
-      <div className="rounded-xl mb-5 p-4 md:px-6 md:py-4" style={{background:'linear-gradient(135deg,#1a4a8a 0%,#378ADD 100%)'}}>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div className="rounded-xl mb-5 px-4 md:px-6 py-3" style={{background:'linear-gradient(135deg,#1a4a8a 0%,#378ADD 100%)'}}>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div>
-            <div className="text-white text-lg font-bold">Panel Directivo</div>
-            <div className="text-blue-200 text-xs mt-0.5">Indicadores institucionales en tiempo real — ERP Educativo · MEFA-IAH</div>
+            <div className="text-white text-base font-semibold">Panel Directivo</div>
+            <div className="text-[#a8c4e8] text-xs mt-0.5">Indicadores institucionales en tiempo real — ERP Educativo · MEFA-IAH</div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-blue-200 text-xs">Actualizado: {hora}</div>
+          <div className="grid grid-cols-2 md:flex md:items-end gap-2 md:gap-3">
+            <div>
+              <div className="text-[#a8c4e8] text-[10px] mb-1 uppercase">Sección</div>
+              <select value={seccion} onChange={e=>{setSeccion(e.target.value);setFecha('');}}
+                className="w-full md:w-auto h-9 px-2 rounded-md border-0 text-sm font-medium bg-white cursor-pointer text-[#1a4a8a]">
+                <option value="TODAS">Todas</option>
+                {SECCIONES.map(s=><option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <div className="text-[#a8c4e8] text-[10px] mb-1 uppercase">Fecha</div>
+              <input type="date" value={fecha} onChange={e=>setFecha(e.target.value)}
+                className="w-full md:w-auto h-9 px-2 rounded-md border-0 text-sm text-[#1a4a8a]"/>
+            </div>
+            {(fecha || seccion !== 'TODAS') && (
+              <button onClick={()=>{setFecha('');setSeccion('TODAS');}}
+                className="h-9 px-3 rounded-md border border-[#a8c4e8] bg-transparent text-white text-xs cursor-pointer hover:bg-white/10 transition">
+                Ver todo
+              </button>
+            )}
             <button onClick={cargar}
-              className="h-9 px-4 rounded-lg border border-blue-300 bg-white/10 text-white text-sm cursor-pointer hover:bg-white/20 transition">
+              className="h-9 px-3 rounded-md border border-[#a8c4e8] bg-transparent text-white text-xs cursor-pointer hover:bg-white/10 transition">
               ↻ Actualizar
             </button>
           </div>
-        </div>
-        {/* FILTROS */}
-        <div className="flex items-end gap-3 mt-3 flex-wrap">
-          <div>
-            <div className="text-blue-200 text-[10px] mb-1 uppercase">Sección</div>
-            <select value={seccion} onChange={e=>{setSeccion(e.target.value);setFecha('');}}
-              className="h-9 px-3 rounded-lg border-0 text-sm font-medium bg-white/90 text-[#1a4a8a] cursor-pointer">
-              <option value="TODAS">Todas</option>
-              {SECCIONES.map(s=><option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-          <div>
-            <div className="text-blue-200 text-[10px] mb-1 uppercase">Fecha</div>
-            <input type="date" value={fecha} onChange={e=>setFecha(e.target.value)}
-              className="h-9 px-3 rounded-lg border-0 text-sm bg-white/90 text-[#1a4a8a]"/>
-          </div>
-          {(fecha || seccion !== 'TODAS') && (
-            <button onClick={()=>{setFecha('');setSeccion('TODAS');}}
-              className="h-9 px-3 rounded-lg border border-blue-300 bg-transparent text-white text-xs cursor-pointer hover:bg-white/10 transition">
-              Ver todo
-            </button>
-          )}
         </div>
       </div>
 
@@ -199,7 +195,7 @@ export default function PanelDirectorKPI() {
       </div>
 
       {/* GRÁFICO BARRAS ESTILO DASHBOARD */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 mb-4">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 mb-8">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-5 gap-2">
           <div>
             <div className="text-[15px] font-semibold text-[#1a4a8a]">Resultado por estado de asistencia</div>
@@ -229,7 +225,7 @@ export default function PanelDirectorKPI() {
               <div className="absolute top-0 left-0 right-0 flex flex-col justify-between pointer-events-none" style={{bottom:'52px'}}>
                 {yTicks().map(t => <div key={t} className="border-t border-dashed border-gray-100 w-full"/>)}
               </div>
-              <div className="grid grid-cols-4 gap-4 items-end relative z-10" style={{height:`${CHART_H+52}px`}}>
+              <div className="grid grid-cols-4 gap-4 items-end relative z-10 pb-2" style={{height:`${CHART_H+100}px`}}>
                 {BARS.map(bar => {
                   const h = maxVal > 0 ? Math.max((tots[bar.key]/maxVal)*CHART_H, 8) : 8;
                   return (
@@ -247,8 +243,8 @@ export default function PanelDirectorKPI() {
                           style={{background:bar.light, border:`2px solid ${bar.color}44`}}>
                           <span className="text-base font-extrabold" style={{color:bar.color}}>{bar.initials}</span>
                         </div>
-                        <div className="text-[11px] text-gray-500 font-medium">{bar.label}</div>
-                        <div className="text-[10px] text-gray-400">{pct(tots[bar.key])}%</div>
+                        <div className="text-[10px] text-gray-500 font-medium leading-tight">{bar.label}</div>
+                        <div className="text-[10px] text-gray-400 leading-tight">{pct(tots[bar.key])}%</div>
                       </div>
                     </div>
                   );
@@ -260,7 +256,7 @@ export default function PanelDirectorKPI() {
       </div>
 
       {/* PIE + SECCIONES */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 mt-2">
         <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6">
           <div className="text-[15px] font-semibold text-[#1a4a8a] mb-4">Distribución de asistencia</div>
           {pieData.length > 0 ? (
