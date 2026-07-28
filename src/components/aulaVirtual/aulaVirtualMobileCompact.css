@@ -1,0 +1,186 @@
+/* =========================================================
+   AULA VIRTUAL - MODO MÓVIL COMPACTO REAL
+   Quita anidación visual y recupera espacio de trabajo
+   ========================================================= */
+
+@media (max-width: 520px) {
+  html,
+  body,
+  #root {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  /* El área central usa casi todo el ancho del celular */
+  .aula-teacher-layout,
+  .aula-teacher-main-area,
+  .aula-teacher-center {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .aula-teacher-center > * {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Reducir TODAS las cajas internas que tienen padding inline */
+  .aula-teacher-center div[style*="padding"],
+  .aula-teacher-center section[style*="padding"],
+  .aula-teacher-center article[style*="padding"] {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  /* Las cajas dentro de cajas ya no deben parecer tablas anidadas */
+  .aula-teacher-center section section,
+  .aula-teacher-center section article,
+  .aula-teacher-center article section,
+  .aula-teacher-center article article {
+    border-left: 0 !important;
+    border-right: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Aplanar paneles internos sin eliminar totalmente la separación visual */
+  .aula-teacher-center section section,
+  .aula-teacher-center section > div[style*="border"],
+  .aula-teacher-center article > div[style*="border"] {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-radius: 12px !important;
+  }
+
+  /* Evitar columnas internas en celular */
+  .aula-teacher-center div[style*="grid-template-columns"],
+  .aula-teacher-center section[style*="grid-template-columns"],
+  .aula-teacher-center article[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .aula-teacher-center div[style*="repeat("],
+  .aula-teacher-center section[style*="repeat("],
+  .aula-teacher-center article[style*="repeat("],
+  .aula-teacher-center div[style*="minmax"],
+  .aula-teacher-center section[style*="minmax"],
+  .aula-teacher-center article[style*="minmax"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* La retroalimentación no debe quedar como caja pequeña con scroll */
+  .aula-teacher-center textarea {
+    width: 100% !important;
+    min-height: 150px !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow-y: auto !important;
+    padding: 12px !important;
+    font-size: 14px !important;
+    line-height: 1.45 !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Caja de retroalimentación IA más ancha */
+  .aula-teacher-center div:has(textarea) {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Botones ocupan ancho útil y no generan columnas pequeñas */
+  .aula-teacher-center button {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 42px !important;
+    border-radius: 999px !important;
+    font-size: 12px !important;
+    padding: 10px 12px !important;
+  }
+
+  /* Los chips no deben comportarse como botones grandes */
+  .aula-teacher-center span {
+    width: auto !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+  }
+
+  /* Menos aire vertical en títulos y párrafos */
+  .aula-teacher-center h1,
+  .aula-teacher-center h2,
+  .aula-teacher-center h3,
+  .aula-teacher-center h4,
+  .aula-teacher-center p {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .aula-teacher-center h1,
+  .aula-teacher-center h2 {
+    font-size: 23px !important;
+    line-height: 1.16 !important;
+  }
+
+  .aula-teacher-center h3 {
+    font-size: 18px !important;
+  }
+
+  .aula-teacher-center h4 {
+    font-size: 14px !important;
+  }
+
+  .aula-teacher-center p {
+    font-size: 13px !important;
+    line-height: 1.45 !important;
+  }
+
+  /* Quitar sensación de varias líneas verticales en los bordes */
+  .aula-teacher-center [style*="border: 1px solid"] {
+    border-left-width: 1px !important;
+    border-right-width: 1px !important;
+  }
+
+  .aula-teacher-center section section [style*="border: 1px solid"],
+  .aula-teacher-center article article [style*="border: 1px solid"] {
+    border-left: 0 !important;
+    border-right: 0 !important;
+  }
+
+  /* El panel morado de evaluación formativa queda más plano */
+  .aula-teacher-center [style*="#faf5ff"],
+  .aula-teacher-center [style*="#f5f3ff"],
+  .aula-teacher-center [style*="#eff6ff"],
+  .aula-teacher-center [style*="#f0f9ff"] {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Evitar que cualquier elemento fuerce ancho artificial */
+  .aula-teacher-center * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Celulares muy pequeños */
+@media (max-width: 390px) {
+  .aula-teacher-center div[style*="padding"],
+  .aula-teacher-center section[style*="padding"],
+  .aula-teacher-center article[style*="padding"] {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+
+  .aula-teacher-center textarea {
+    min-height: 140px !important;
+  }
+}

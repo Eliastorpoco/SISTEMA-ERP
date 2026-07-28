@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
-export const API_VERSION = 'v2.0';
+// seguridad-reset-sesiones-demo-v1
+export const API_VERSION = 'v2.1';
 
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'https://api.evolonline.online',
@@ -12,6 +13,11 @@ const client = axios.create({
 export function clearStoredSession() {
   localStorage.removeItem('access_token');
   localStorage.removeItem('token');
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('jwt');
+  localStorage.removeItem('erp_token');
+  localStorage.removeItem('aula_virtual_token');
   localStorage.removeItem('user');
 }
 

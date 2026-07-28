@@ -26,6 +26,8 @@ const NAV_ITEMS = [
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" strokeLinecap="round"/><polyline points="14 2 14 8 20 8" strokeLinecap="round"/><line x1="16" y1="13" x2="8" y2="13" strokeLinecap="round"/><line x1="16" y1="17" x2="8" y2="17" strokeLinecap="round"/></svg> },
   { label:'Aula Virtual', to:'/aula-virtual', group:'Aprendizaje', roles:['DIRECTOR','ADMIN','DOCENTE'],
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4" strokeLinecap="round"/></svg> },
+  { label:'Vista Estudiante', to:'/aula-virtual-estudiante', group:'Aprendizaje', roles:['DIRECTOR','ADMIN','DOCENTE','ESTUDIANTE'],
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><path d="M12 14l9-5-9-5-9 5 9 5z" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 14l6.16-3.42A12.08 12.08 0 0112 21a12.08 12.08 0 01-6.16-10.42L12 14z" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { label:'Notificaciones', to:'/notificaciones', group:'Aprendizaje', roles:['DIRECTOR','ADMIN'],
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round"/><path d="M13.73 21a2 2 0 01-3.46 0" strokeLinecap="round"/></svg> },
   { label:'Reportes', to:'/reporte', group:'Reportes', roles:['DIRECTOR','ADMIN'],
@@ -50,17 +52,16 @@ export default function Sidebar({ collapsed=false, onToggle, onNavClick }) {
   return (
     <aside className={`flex flex-col h-screen bg-white border-r border-gray-100 transition-all duration-300 ${collapsed?'w-16':'w-60'}`}>
       {/* Logo */}
-      <div className="flex items-center justify-between px-4 py-5 border-b border-gray-100">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
         {!collapsed && (
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-[#1a4a8a] flex items-center justify-center flex-shrink-0">
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} className="w-4 h-4">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <span className="text-sm font-bold text-gray-900 tracking-tight">EduERP</span>
-          </div>
-        )}
+              <div className="flex items-center px-1" style={{height:"64px"}}>
+                <img
+                  src="/images/evolsist-logo.png"
+                  alt="Evolsist Plataforma LMS"
+                  style={{width:"192px", height:"60px", display:"block", objectFit:"contain"}}
+                />
+              </div>
+            )}
         <button onClick={onToggle}
           className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors ml-auto">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">

@@ -2,11 +2,15 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import { Suspense, lazy, useState } from 'react';
 import { Rol } from './types/roles';
 import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/useAuth';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 
 const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
+const AulaVirtual = lazy(() => import('./pages/AulaVirtual.jsx'));
+const AulaVirtualEstudiante = lazy(() => import('./pages/AulaVirtualEstudiante.jsx'));
+const Evaluaciones = lazy(() => import('./pages/Evaluaciones.jsx'));
 const Asistencia = lazy(() => import('./pages/Asistencia'));
 const Reporte = lazy(() => import('./pages/Reporte'));
 const Estudiantes = lazy(() => import('./pages/Estudiantes'));
@@ -20,10 +24,22 @@ const Proximamente = lazy(() => import('./pages/Proximamente'));
 const Docentes = lazy(() => import('./pages/Docentes'));
 const AIConfigPage  = lazy(() => import('./pages/configuracion/AIConfigPage'));
 
+function DashboardSegunRol() {
+  const { user } = useAuth();
+  const rol = String(user?.role || '').toUpperCase();
+
+  if (rol === Rol.ESTUDIANTE) {
+    return <Navigate to="/aula-virtual-estudiante" replace />;
+  }
+
+  return <Dashboard />;
+}
+
+
 const privateRoutes = [
   { index: true, element: <Navigate to="/dashboard" replace /> },
 
-  { path: 'dashboard', element: <Dashboard />, roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'dashboard', element: <DashboardSegunRol />, roles: [Rol.ADMIN, Rol.DOCENTE, Rol.ESTUDIANTE] },
   { path: 'panel-director', element: <PanelDirector />, roles: [Rol.ADMIN] },
   // Nuevas rutas
   { path: 'panel-director-kpi', element: <PanelDirectorKPI />, roles: [Rol.ADMIN] },
@@ -36,7 +52,7 @@ const privateRoutes = [
   { path: 'reporte-estudiante', element: <ReporteEstudiante />, roles: [Rol.ADMIN, Rol.DOCENTE] },
 
   // Rutas para módulos en construcción (sidebar apuntaba a estas)
-  { path: 'evaluaciones',  element: <Proximamente titulo="Evaluaciones" />,  roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'evaluaciones',  element: <Evaluaciones />,  roles: [Rol.ADMIN, Rol.DOCENTE] },
   { path: 'matricula',     element: <Proximamente titulo="Matrícula" />,     roles: [Rol.ADMIN] },
   { path: 'incidencias',   element: <Proximamente titulo="Incidencias" />,   roles: [Rol.ADMIN, Rol.DOCENTE] },
   { path: 'docentes', element: <Docentes />, roles: [Rol.ADMIN] },
@@ -45,7 +61,8 @@ const privateRoutes = [
   { path: 'biblioteca',    element: <Proximamente titulo="Biblioteca" />,    roles: [Rol.ADMIN, Rol.DOCENTE] },
   { path: 'presupuesto',   element: <Proximamente titulo="Presupuesto" />,   roles: [Rol.ADMIN] },
   { path: 'configuracion/ia', element: <AIConfigPage />, roles: [Rol.ADMIN] },
-  { path: 'aula-virtual',  element: <Proximamente titulo="Aula Virtual" />,  roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'aula-virtual',  element: <AulaVirtual />,  roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'aula-virtual-estudiante', element: <AulaVirtualEstudiante />, roles: [Rol.ADMIN, Rol.DOCENTE, Rol.ESTUDIANTE] },
 ];
 
 function Layout() {

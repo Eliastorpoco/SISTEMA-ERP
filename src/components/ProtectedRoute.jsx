@@ -22,9 +22,7 @@ export default function ProtectedRoute({
     normalizeRole(r)
   );
 
-  console.log("USER ROLE:", userRole);
-  console.log("ALLOWED ROLES:", allowedRoles);
-
+  // seguridad-protected-route-sin-console-v1
   if (userRole === "ADMIN" || user?.isAdmin === true) {
     return children;
   }

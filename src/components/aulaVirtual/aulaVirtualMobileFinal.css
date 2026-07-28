@@ -1,0 +1,148 @@
+/* =========================================================
+   AULA VIRTUAL - MEJORA FINAL CELULAR
+   Más ancho útil, menos cajas anidadas, diseño más limpio
+   ========================================================= */
+
+@media (max-width: 520px) {
+  /* Usar más ancho real del celular */
+  .aula-teacher-layout {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .aula-teacher-center {
+    width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .aula-teacher-center > * {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Quitar líneas verticales sobrantes de cajas anidadas */
+  .aula-teacher-center section,
+  .aula-teacher-center article {
+    border-left-width: 0 !important;
+    border-right-width: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Mantener tarjetas importantes, pero más limpias */
+  .aula-teacher-center section > div,
+  .aula-teacher-center article > div {
+    border-radius: 14px !important;
+  }
+
+  /* Paneles principales con fondo suave y ancho completo */
+  .aula-teacher-center [style*="background: #eff6ff"],
+  .aula-teacher-center [style*="background:#eff6ff"],
+  .aula-teacher-center [style*="background: #f0f9ff"],
+  .aula-teacher-center [style*="background:#f0f9ff"],
+  .aula-teacher-center [style*="background: #faf5ff"],
+  .aula-teacher-center [style*="background:#faf5ff"] {
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  /* Cambiar morado a azul elegante también en móvil */
+  .aula-teacher-center [style*="#6d28d9"],
+  .aula-teacher-center [style*="#7c3aed"],
+  .aula-teacher-center [style*="#8b5cf6"],
+  .aula-teacher-center [style*="#4f46e5"] {
+    color: #2563eb !important;
+  }
+
+  .aula-teacher-center [style*="#faf5ff"],
+  .aula-teacher-center [style*="#f5f3ff"],
+  .aula-teacher-center [style*="#ede9fe"] {
+    background: #eff6ff !important;
+  }
+
+  .aula-teacher-center [style*="#ddd6fe"],
+  .aula-teacher-center [style*="#c4b5fd"] {
+    border-color: #bfdbfe !important;
+  }
+
+  /* Botón IA azul elegante */
+  .aula-teacher-center button[style*="#7c3aed"],
+  .aula-teacher-center button[style*="#8b5cf6"],
+  .aula-teacher-center button[style*="#4f46e5"] {
+    background: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+  }
+
+  /* Tarjetas de resumen: menos altas y más compactas */
+  .aula-teacher-center [style*="repeat(auto-fit"] > div,
+  .aula-teacher-center [style*="minmax(170px"] > div,
+  .aula-teacher-center [style*="minmax(140px"] > div {
+    padding: 10px !important;
+    border-radius: 12px !important;
+  }
+
+  /* Textos de resumen más compactos */
+  .aula-teacher-center [style*="fontSize: 11px"],
+  .aula-teacher-center [style*="font-size: 11px"] {
+    font-size: 10.5px !important;
+  }
+
+  .aula-teacher-center [style*="fontSize: 12px"],
+  .aula-teacher-center [style*="font-size: 12px"] {
+    font-size: 11.5px !important;
+  }
+
+  /* Textarea de retroalimentación más cómodo */
+  .aula-teacher-center textarea {
+    min-height: 135px !important;
+    max-height: 220px !important;
+    overflow-y: auto !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* Reducir altura de cards internas */
+  .aula-teacher-center h4 {
+    margin-top: 0 !important;
+    margin-bottom: 4px !important;
+  }
+
+  .aula-teacher-center p {
+    margin-top: 3px !important;
+    margin-bottom: 6px !important;
+  }
+
+  /* Botones mejor distribuidos */
+  .aula-teacher-center button {
+    width: 100% !important;
+    margin-top: 4px !important;
+  }
+
+  /* Los chips siguen compactos */
+  .aula-teacher-center span {
+    width: auto !important;
+    display: inline-flex !important;
+  }
+
+  /* Mejor separación entre grandes bloques */
+  .aula-teacher-center > div,
+  .aula-teacher-center > section,
+  .aula-teacher-center > article {
+    margin-bottom: 10px !important;
+  }
+}
+
+/* Celulares muy angostos */
+@media (max-width: 390px) {
+  .aula-teacher-center textarea {
+    min-height: 125px !important;
+  }
+
+  .aula-teacher-center h1,
+  .aula-teacher-center h2 {
+    font-size: 21px !important;
+  }
+}
