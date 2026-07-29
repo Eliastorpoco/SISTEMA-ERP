@@ -567,7 +567,7 @@ export async function abrirArchivoAulaVirtual(url = "", nombre = "archivo") {
   }
 
   const finalUrl = construirUrlArchivoAulaVirtual(url);
-  const token = await getToken();
+  const token = obtenerTokenSesion(finalUrl);
 
   // Importante:
   // No usar noopener/noreferrer aquí porque Chrome puede devolver null.
