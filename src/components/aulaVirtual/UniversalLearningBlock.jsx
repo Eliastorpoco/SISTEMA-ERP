@@ -3414,6 +3414,26 @@ export default function UniversalLearningBlock({
                           {entrega.archivo_disponible === false ? " · No disponible (histórico)" : " · Disponible"}
                         </div>
 
+                        {(entrega.formato_evidencia_nombre ||
+                          entrega?.payload?.formato_evidencia_nombre) && (
+                          <div
+                            style={{
+                              marginTop: "6px",
+                              padding: "8px 10px",
+                              borderRadius: "10px",
+                              background: "#eff6ff",
+                              border: "1px solid #bfdbfe",
+                              color: "#1e40af",
+                              fontSize: "12px",
+                              fontWeight: 900,
+                            }}
+                          >
+                            Formato DUA utilizado:{" "}
+                            {entrega.formato_evidencia_nombre ||
+                              entrega?.payload?.formato_evidencia_nombre}
+                          </div>
+                        )}
+
                         {(() => {
                           const descripcionEstudiante =
                             entrega.comentario_estudiante ||

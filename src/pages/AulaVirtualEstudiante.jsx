@@ -7,6 +7,7 @@ import {
   listarEntregasDetalleBloqueAulaVirtual,
   construirUrlArchivoAulaVirtual,
   abrirArchivoAulaVirtual,
+  obtenerConfiguracionDUABloqueAulaVirtual,
 } from "../services/aulaVirtualBlocksService";
 
 import { BookOpen, ChevronRight, FileText } from "lucide-react";
@@ -97,28 +98,192 @@ function EvidenceRealUploadPanel({ block, onEnviar }) {
   const [descripcion, setDescripcion] = useState(
     "Presento mi evidencia de aprendizaje desarrollada según el propósito y criterio de evaluación."
   );
+  const [formatosDua, setFormatosDua] = useState([]);
+  const [formatoSeleccionadoId, setFormatoSeleccionadoId] = useState("");
+  const [cargandoFormatos, setCargandoFormatos] = useState(true);
   const [subiendo, setSubiendo] = useState(false);
   const [mensaje, setMensaje] = useState("");
 
+  useEffect(() => {
+    let activo = true;
+
+    const cargarFormatos = async () => {
+      if (!block?.id) {
+        setCargandoFormatos(false);
+        return;
+      }
+
+      try {
+        setCargandoFormatos(true);
+
+        const respuesta =
+          await obtenerConfiguracionDUABloqueAulaVirtual(block.id);
+
+        if (!activo) return;
+
+        const formatos = Array.isArray(
+          respuesta?.dua?.formatos_evidencia
+        )
+          ? respuesta.dua.formatos_evidencia.filter(
+              (formato) => formato?.es_activo !== false
+            )
+          : [];
+
+        setFormatosDua(formatos);
+
+        const formatosConArchivo = formatos.filter(
+          (formato) => formato?.requiere_archivo === true
+        );
+
+        const predeterminado =
+          formatosConArchivo.find(
+            (formato) => formato?.es_predeterminado === true
+          ) ||
+          formatosConArchivo[0] ||
+          null;
+
+        setFormatoSeleccionadoId(
+          predeterminado?.id != null
+            ? String(predeterminado.id)
+            : ""
+        );
+      } catch (error) {
+        console.error(
+          "No se pudieron cargar los formatos de evidencia DUA:",
+          error
+        );
+
+        if (activo) {
+          setFormatosDua([]);
+          setFormatoSeleccionadoId("");
+        }
+      } finally {
+        if (activo) {
+          setCargandoFormatos(false);
+        }
+      }
+    };
+
+    cargarFormatos();
+
+    return () => {
+      activo = false;
+    };
+  }, [block?.id]);
+
+  const formatosConArchivo = useMemo(
+    () =>
+      formatosDua.filter(
+        (formato) => formato?.requiere_archivo === true
+      ),
+    [formatosDua]
+  );
+
+  const formatoSeleccionado = useMemo(
+    () =>
+      formatosConArchivo.find(
+        (formato) =>
+          String(formato?.id) ===
+          String(formatoSeleccionadoId)
+      ) || null,
+    [formatosConArchivo, formatoSeleccionadoId]
+  );
+
+  const accept = useMemo(() => {
+    const mimeTypes =
+      formatoSeleccionado?.mime_types_permitidos;
+
+    return Array.isArray(mimeTypes)
+      ? mimeTypes.filter(Boolean).join(",")
+      : "";
+  }, [formatoSeleccionado]);
+
   const enviar = async () => {
+    if (
+      formatosConArchivo.length > 0 &&
+      !formatoSeleccionado
+    ) {
+      setMensaje(
+        "Selecciona cómo demostrarás tu aprendizaje."
+      );
+      return;
+    }
+
     if (!archivo) {
       setMensaje("Selecciona un archivo primero.");
+      return;
+    }
+
+    if (
+      formatoSeleccionado?.tamano_maximo_bytes &&
+      archivo.size >
+        Number(formatoSeleccionado.tamano_maximo_bytes)
+    ) {
+      const limiteMb =
+        Number(formatoSeleccionado.tamano_maximo_bytes) /
+        (1024 * 1024);
+
+      setMensaje(
+        `El archivo supera el máximo permitido de ${limiteMb.toFixed(
+          1
+        )} MB.`
+      );
+      return;
+    }
+
+    const mimeTypes =
+      formatoSeleccionado?.mime_types_permitidos;
+
+    if (
+      Array.isArray(mimeTypes) &&
+      mimeTypes.length > 0 &&
+      archivo.type &&
+      !mimeTypes.includes(archivo.type)
+    ) {
+      setMensaje(
+        "El tipo de archivo no está permitido para este formato."
+      );
       return;
     }
 
     try {
       setSubiendo(true);
       setMensaje("Subiendo evidencia real...");
-      await onEnviar(block, archivo, descripcion);
+
+      await onEnviar(
+        block,
+        archivo,
+        descripcion,
+        formatoSeleccionado
+      );
+
       setArchivo(null);
-      setMensaje("Evidencia real enviada correctamente.");
+
+      setMensaje(
+        formatoSeleccionado
+          ? `Evidencia enviada como "${formatoSeleccionado.nombre}".`
+          : "Evidencia real enviada correctamente."
+      );
     } catch (error) {
-      console.error("Error enviando evidencia real:", error);
-      setMensaje(error?.message || "No se pudo enviar la evidencia real.");
+      console.error(
+        "Error enviando evidencia real:",
+        error
+      );
+
+      setMensaje(
+        error?.message ||
+          "No se pudo enviar la evidencia real."
+      );
     } finally {
       setSubiendo(false);
     }
   };
+
+  const hayFormatosDua =
+    formatosDua.length > 0;
+
+  const hayFormatosConArchivo =
+    formatosConArchivo.length > 0;
 
   return (
     <div
@@ -131,19 +296,167 @@ function EvidenceRealUploadPanel({ block, onEnviar }) {
         padding: "14px",
       }}
     >
-      <div style={{ fontWeight: 900, color: "#166534", marginBottom: "8px" }}>
-        📤 Subir evidencia real
+      <div
+        style={{
+          fontWeight: 900,
+          color: "#166534",
+          marginBottom: "8px",
+        }}
+      >
+        📤 Entregar evidencia de aprendizaje
       </div>
 
-      <div style={{ color: "#64748b", fontSize: "13px", marginBottom: "10px" }}>
-        Adjunta tu archivo para enviarlo al docente.
+      <div
+        style={{
+          color: "#64748b",
+          fontSize: "13px",
+          marginBottom: "12px",
+        }}
+      >
+        Elige uno de los formatos autorizados por el docente.
       </div>
 
-      <label style={{ display: "grid", gap: "8px", color: "#166534", fontWeight: 900, marginBottom: "12px" }}>
+      <div
+        style={{
+          fontWeight: 900,
+          color: "#1e3a8a",
+          marginBottom: "8px",
+        }}
+      >
+        ¿Cómo demostrarás tu aprendizaje?
+      </div>
+
+      {cargandoFormatos ? (
+        <div
+          style={{
+            padding: "12px",
+            background: "#f8fafc",
+            borderRadius: "12px",
+            color: "#64748b",
+            marginBottom: "12px",
+          }}
+        >
+          Cargando formatos DUA...
+        </div>
+      ) : hayFormatosConArchivo ? (
+        <div
+          style={{
+            display: "grid",
+            gap: "8px",
+            marginBottom: "14px",
+          }}
+        >
+          {formatosConArchivo.map((formato) => {
+            const seleccionado =
+              String(formato.id) ===
+              String(formatoSeleccionadoId);
+
+            return (
+              <label
+                key={formato.id}
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                  alignItems: "flex-start",
+                  padding: "12px",
+                  border: seleccionado
+                    ? "2px solid #2563eb"
+                    : "1px solid #cbd5e1",
+                  borderRadius: "14px",
+                  background: seleccionado
+                    ? "#eff6ff"
+                    : "#ffffff",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="radio"
+                  name={`formato-dua-${block?.id}`}
+                  value={String(formato.id)}
+                  checked={seleccionado}
+                  onChange={(event) =>
+                    setFormatoSeleccionadoId(
+                      event.target.value
+                    )
+                  }
+                />
+
+                <span>
+                  <strong
+                    style={{
+                      display: "block",
+                      color: "#1e3a8a",
+                    }}
+                  >
+                    {formato.nombre}
+                  </strong>
+
+                  {formato.indicaciones && (
+                    <span
+                      style={{
+                        display: "block",
+                        marginTop: "3px",
+                        color: "#64748b",
+                        fontSize: "12px",
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {formato.indicaciones}
+                    </span>
+                  )}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      ) : hayFormatosDua ? (
+        <div
+          style={{
+            padding: "12px",
+            marginBottom: "14px",
+            border: "1px solid #fde68a",
+            borderRadius: "12px",
+            background: "#fffbeb",
+            color: "#92400e",
+            fontSize: "13px",
+          }}
+        >
+          El docente configuró formatos de texto o enlace.
+          En este hito documental todavía no hay un formato
+          con archivo habilitado.
+        </div>
+      ) : (
+        <div
+          style={{
+            padding: "12px",
+            marginBottom: "14px",
+            border: "1px solid #cbd5e1",
+            borderRadius: "12px",
+            background: "#f8fafc",
+            color: "#475569",
+            fontSize: "13px",
+          }}
+        >
+          Formato compatible: archivo de evidencia.
+        </div>
+      )}
+
+      <label
+        style={{
+          display: "grid",
+          gap: "8px",
+          color: "#166534",
+          fontWeight: 900,
+          marginBottom: "12px",
+        }}
+      >
         Descripción de mi evidencia
+
         <textarea
           value={descripcion}
-          onChange={(event) => setDescripcion(event.target.value)}
+          onChange={(event) =>
+            setDescripcion(event.target.value)
+          }
           rows={4}
           placeholder="Describe brevemente qué estás entregando..."
           style={{
@@ -159,38 +472,96 @@ function EvidenceRealUploadPanel({ block, onEnviar }) {
         />
       </label>
 
-      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
         <input
           type="file"
-          onChange={(e) => setArchivo(e.target.files?.[0] || null)}
+          accept={accept || undefined}
+          disabled={
+            hayFormatosDua &&
+            !hayFormatosConArchivo
+          }
+          onChange={(event) =>
+            setArchivo(
+              event.target.files?.[0] ||
+                null
+            )
+          }
           style={{
             border: "1px solid #cbd5e1",
             borderRadius: "12px",
             padding: "10px",
             background: "#f8fafc",
+            maxWidth: "100%",
           }}
         />
 
         <button
           type="button"
           onClick={enviar}
-          disabled={subiendo}
+          disabled={
+            subiendo ||
+            (hayFormatosDua &&
+              !hayFormatosConArchivo)
+          }
           style={{
             border: "0",
             borderRadius: "12px",
             padding: "11px 14px",
-            background: subiendo ? "#94a3b8" : "#16a34a",
+            background:
+              subiendo ||
+              (hayFormatosDua &&
+                !hayFormatosConArchivo)
+                ? "#94a3b8"
+                : "#16a34a",
             color: "#ffffff",
             fontWeight: 900,
-            cursor: subiendo ? "not-allowed" : "pointer",
+            cursor:
+              subiendo ||
+              (hayFormatosDua &&
+                !hayFormatosConArchivo)
+                ? "not-allowed"
+                : "pointer",
           }}
         >
-          {subiendo ? "Subiendo..." : "Enviar evidencia real"}
+          {subiendo
+            ? "Subiendo..."
+            : "Enviar evidencia"}
         </button>
       </div>
 
+      {formatoSeleccionado && (
+        <div
+          style={{
+            marginTop: "10px",
+            padding: "10px 12px",
+            borderRadius: "12px",
+            background: "#eff6ff",
+            color: "#1e40af",
+            fontSize: "13px",
+            fontWeight: 800,
+          }}
+        >
+          Formato seleccionado:{" "}
+          {formatoSeleccionado.nombre}
+        </div>
+      )}
+
       {mensaje && (
-        <div style={{ marginTop: "10px", color: "#0f172a", fontSize: "13px", fontWeight: 800 }}>
+        <div
+          style={{
+            marginTop: "10px",
+            color: "#0f172a",
+            fontSize: "13px",
+            fontWeight: 800,
+          }}
+        >
           {mensaje}
         </div>
       )}
@@ -1607,6 +1978,7 @@ function ActivityDetailModal({ block, onClose, onBlockUpdated }) {
 
   const {
     historial,
+    ultimoIntento,
     intentosPermitidos,
     intentosDisponibles,
     feedbackEnviado,
@@ -2061,7 +2433,8 @@ function ActivityDetailModal({ block, onClose, onBlockUpdated }) {
   const entregarArchivoRealEstudiante = async (
     block,
     archivoSeleccionado = null,
-    descripcionDesdePanel = ""
+    descripcionDesdePanel = "",
+    formatoSeleccionado = null
   ) => {
     if (!block?.id) {
       setMensajeEvidenciaReal("No se puede entregar evidencia: falta el ID del bloque.");
@@ -2091,7 +2464,19 @@ function ActivityDetailModal({ block, onClose, onBlockUpdated }) {
         activityDraft.evidenciaDescripcion?.trim() ||
         "Entrega realizada desde la vista estudiante";
 
-      const numeroIntentoEvidencia = historial.length + 1;
+      // dua-reusar-numero-intento-abierto-v1
+      const numeroIntentoAbierto = Number(
+        ultimoIntento?.numero_intento ??
+          ultimoIntento?.intento ??
+          0
+      );
+
+      const numeroIntentoEvidencia =
+        intentoEnUso &&
+        Number.isFinite(numeroIntentoAbierto) &&
+        numeroIntentoAbierto > 0
+          ? numeroIntentoAbierto
+          : historial.length + 1;
 
       const respuesta = await entregarEvidenciaRealBloque(block.id, archivoSeleccionado, {
         numero_intento: numeroIntentoEvidencia,
@@ -2099,6 +2484,8 @@ function ActivityDetailModal({ block, onClose, onBlockUpdated }) {
         comentario: descripcionEvidencia,
         evidencia_descripcion: descripcionEvidencia,
         descripcion_evidencia: descripcionEvidencia,
+        formato_evidencia_id:
+          formatoSeleccionado?.id ?? null,
         puntaje: 80,
         avance: 100,
         nivel_logro: "Logro Esperado",
@@ -2122,6 +2509,12 @@ function ActivityDetailModal({ block, onClose, onBlockUpdated }) {
           puntaje: intento.puntaje || 80,
           archivo_url: intento.archivo_url || archivo.url,
           archivo_nombre: intento.archivo_nombre || archivo.nombre,
+          formato_evidencia_id:
+            formatoSeleccionado?.id ?? null,
+          formato_evidencia_codigo:
+            formatoSeleccionado?.codigo_formato || "",
+          formato_evidencia_nombre:
+            formatoSeleccionado?.nombre || "",
           decisionDocente: "Pendiente",
           retroalimentacion: "Evidencia real enviada por el estudiante. Pendiente de revisión docente.",
           observacionDocente: "Pendiente de revisión docente.",

@@ -483,6 +483,16 @@ export async function entregarEvidenciaRealBloque(bloqueId, archivo, datos = {})
   formData.append("evidencia_descripcion", descripcionEvidencia);
   formData.append("descripcion_evidencia", descripcionEvidencia);
 
+  if (
+    datos.formato_evidencia_id != null &&
+    String(datos.formato_evidencia_id).trim()
+  ) {
+    formData.append(
+      "formato_evidencia_id",
+      String(datos.formato_evidencia_id)
+    );
+  }
+
   if (datos.usuario_id) {
     formData.append("usuario_id", String(datos.usuario_id));
   }
