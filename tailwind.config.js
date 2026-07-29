@@ -62,22 +62,31 @@ export default {
       },
 
       keyframes: {
+        enter: {
+          from: {
+            transform: "translate3d(0, 0.5rem, 0)",
+          },
+        },
+
         "accordion-down": {
           from: { height: "0" },
           to: {
-            height: "var(--radix-accordion-content-height)",
+            height:
+              "var(--radix-accordion-content-height, var(--accordion-panel-height, auto))",
           },
         },
 
         "accordion-up": {
           from: {
-            height: "var(--radix-accordion-content-height)",
+            height:
+              "var(--radix-accordion-content-height, var(--accordion-panel-height, auto))",
           },
           to: { height: "0" },
         },
       },
 
       animation: {
+        in: "enter 0.2s ease",
         "accordion-down":
           "accordion-down 0.2s ease-out",
         "accordion-up":
