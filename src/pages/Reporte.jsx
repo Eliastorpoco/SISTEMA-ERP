@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import client from '../api/client';
 import { useAuth } from '../context/useAuth';
-import * as XLSX from 'xlsx-js-style';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import {
   BarChart,
   Bar,
@@ -197,8 +194,12 @@ export default function Reporte() {
     );
   };
 
-  const exportarExcel = () => {
+  const exportarExcel = async () => {
     if (registros.length === 0) return;
+
+    try {
+      const XLSXModule = await import("xlsx-js-style");
+      const XLSX = XLSXModule.default ?? XLSXModule;
 
     // Agrupar por estudiante y fecha
     const estudiantesMap = {};
@@ -904,13 +905,29 @@ export default function Reporte() {
 
     XLSX.utils.book_append_sheet(wb, wsGraph, 'Gráfico Visual');
 
-    XLSX.writeFile(wb, `Asistencia_${seccion === 'TODAS' ? 'Todas' : seccion}_${new Date().toISOString().split('T')[0]}.xlsx`);
+      XLSX.writeFile(wb, `Asistencia_${seccion === 'TODAS' ? 'Todas' : seccion}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } catch (err) {
+      console.error('Error al exportar Excel:', err);
+      setError('No se pudo exportar el archivo Excel. Intenta nuevamente.');
+    }
   };
 
   const exportarPDF = async () => {
     if (!reporteRef.current || registros.length === 0) return;
 
     try {
+      const [html2canvasModule, jsPDFModule] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+
+      const html2canvas = html2canvasModule.default;
+      const jsPDF = jsPDFModule.jsPDF ?? jsPDFModule.default;
+
+      if (typeof html2canvas !== 'function' || typeof jsPDF !== 'function') {
+        throw new Error('No se pudieron cargar las librerías necesarias para exportar el PDF.');
+      }
+
       const canvas = await html2canvas(reporteRef.current, {
         scale: 2,
         useCORS: true,

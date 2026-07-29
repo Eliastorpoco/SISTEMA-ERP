@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import { useAuth } from '../context/useAuth';
-import * as XLSX from 'xlsx-js-style';
 
 const SECTION_COLORS = {
   '4A': { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af', accent: '#2563eb' },
@@ -213,6 +212,8 @@ export default function ReporteEstudiante() {
 
     try {
       setExportando(true);
+      const XLSXModule = await import("xlsx-js-style");
+      const XLSX = XLSXModule.default ?? XLSXModule;
 
       const { nombre, seccion } = estudianteSeleccionado;
       const fechaHoy = new Date().toLocaleDateString('es-PE', {

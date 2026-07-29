@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import { useAuth } from '../context/useAuth';
-import * as XLSX from 'xlsx-js-style';
 
 // Paleta de colores para las tarjetas de seccion
 const SECTION_COLORS = {
@@ -158,6 +157,8 @@ export default function Estudiantes() {
   async function exportarPorSeccion(seccion) {
     try {
       setExportando(true);
+      const XLSXModule = await import("xlsx-js-style");
+      const XLSX = XLSXModule.default ?? XLSXModule;
       const lista = estudiantes
         .filter((e) => e.seccion === seccion)
         .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
