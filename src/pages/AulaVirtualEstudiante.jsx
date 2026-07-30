@@ -9,6 +9,7 @@ import {
   abrirArchivoAulaVirtual,
   obtenerConfiguracionDUABloqueAulaVirtual,
 } from "../services/aulaVirtualBlocksService";
+import { upsertIntentoHistorial } from "../utils/aulaVirtualAttemptHistory";
 
 import { BookOpen, ChevronRight, FileText } from "lucide-react";
 
@@ -2497,15 +2498,21 @@ function ActivityDetailModal({ block, onClose, onBlockUpdated }) {
       const intento = respuesta?.intento || {};
       const archivo = respuesta?.archivo || {};
 
-      const nuevoHistorial = [
+      const nuevoHistorial = upsertIntentoHistorial(
+        block.studentAttemptHistory,
         {
-          id: intento.id || Date.now(),
+          id: intento.id,
           tipo: block.tipo,
           fecha: new Date().toLocaleString(),
           nivel: intento.nivel_logro || "Logro Esperado",
           avance: intento.avance || 100,
           estado: intento.estado || "Completado",
-          intento: intento.numero_intento || 1,
+          intento:
+            intento.numero_intento ??
+            numeroIntentoEvidencia,
+          numero_intento:
+            intento.numero_intento ??
+            numeroIntentoEvidencia,
           puntaje: intento.puntaje || 80,
           archivo_url: intento.archivo_url || archivo.url,
           archivo_nombre: intento.archivo_nombre || archivo.nombre,
@@ -2518,9 +2525,8 @@ function ActivityDetailModal({ block, onClose, onBlockUpdated }) {
           decisionDocente: "Pendiente",
           retroalimentacion: "Evidencia real enviada por el estudiante. Pendiente de revisión docente.",
           observacionDocente: "Pendiente de revisión docente.",
-        },
-        ...(block.studentAttemptHistory || []),
-      ];
+        }
+      );
 
       const actualizado = {
         ...block,
@@ -2988,26 +2994,11 @@ function ActivityDetailModal({ block, onClose, onBlockUpdated }) {
         estudiante_username: "estudiante",
       };
 
-      const historialActualizado = [
-        intentoActualizado,
-        ...historial.filter((item) => {
-          const mismoId =
-            item?.id != null &&
-            String(item.id) ===
-              String(intentoId);
-
-          const numeroItem = Number(
-            item?.numero_intento ??
-              item?.intento ??
-              0
-          );
-
-          return (
-            !mismoId &&
-            numeroItem !== numeroReal
-          );
-        }),
-      ];
+      const historialActualizado =
+        upsertIntentoHistorial(
+          historial,
+          intentoActualizado
+        );
 
       const actualizado = {
         ...block,
@@ -3164,26 +3155,11 @@ function ActivityDetailModal({ block, onClose, onBlockUpdated }) {
           "Pendiente de revisión docente.",
       };
 
-      const historialActualizado = [
-        intentoFinalizado,
-        ...historial.filter((item) => {
-          const mismoId =
-            item?.id != null &&
-            String(item.id) ===
-              String(intentoId);
-
-          const numeroItem = Number(
-            item?.numero_intento ??
-              item?.intento ??
-              0
-          );
-
-          return (
-            !mismoId &&
-            numeroItem !== numeroReal
-          );
-        }),
-      ];
+      const historialActualizado =
+        upsertIntentoHistorial(
+          historial,
+          intentoFinalizado
+        );
 
       const actualizado = {
         ...block,
