@@ -10,6 +10,7 @@ const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const AulaVirtual = lazy(() => import('./pages/AulaVirtual.jsx'));
 const AulaVirtualEstudiante = lazy(() => import('./pages/AulaVirtualEstudiante.jsx'));
+const ReportePedagogicoAulaVirtual = lazy(() => import('./pages/ReportePedagogicoAulaVirtual.jsx'));
 const Evaluaciones = lazy(() => import('./pages/Evaluaciones.jsx'));
 const Asistencia = lazy(() => import('./pages/Asistencia'));
 const Reporte = lazy(() => import('./pages/Reporte'));
@@ -62,6 +63,7 @@ const privateRoutes = [
   { path: 'presupuesto',   element: <Proximamente titulo="Presupuesto" />,   roles: [Rol.ADMIN] },
   { path: 'configuracion/ia', element: <AIConfigPage />, roles: [Rol.ADMIN] },
   { path: 'aula-virtual',  element: <AulaVirtual />,  roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'aula-virtual/reporte-pedagogico', element: <ReportePedagogicoAulaVirtual />, roles: [Rol.DIRECTOR, Rol.ADMIN, Rol.DOCENTE] },
   { path: 'aula-virtual-estudiante', element: <AulaVirtualEstudiante />, roles: [Rol.ADMIN, Rol.DOCENTE, Rol.ESTUDIANTE] },
 ];
 
