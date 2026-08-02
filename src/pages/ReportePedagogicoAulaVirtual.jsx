@@ -5,13 +5,19 @@ import { getConsolidadoCalificaciones } from "../services/aulaVirtualReportesSer
 import {
   formatearPuntaje,
   mapReporteApiError,
+  normalizarConsolidadoCalificaciones,
   obtenerPublicacionVisual,
+  debeMostrarAlertaCalidad,
 } from "../utils/aulaVirtualReportePedagogico";
 
 const EMPTY_RESPONSE = Object.freeze({
   filtros: {},
   resumen: {
     estudiantes: 0,
+    estudiantes_identificados: 0,
+    registros_sin_vincular: 0,
+    usuarios_sin_estudiante: 0,
+    usernames_inferidos: 0,
     actividades: 0,
     calificaciones_definitivas: 0,
     calificaciones_provisionales: 0,
@@ -35,6 +41,7 @@ const INITIAL_FILTERS = Object.freeze({
   usuarioId: "",
   estudianteUsername: "",
   estadoCalificacion: "todas",
+  calidadIdentidad: "todas",
   page: 1,
   pageSize: 50,
 });
@@ -90,9 +97,16 @@ function PublicacionBadge({ estado }) {
 function ResumenCalificaciones({ resumen }) {
   const tarjetas = [
     {
-      label: "Estudiantes",
-      value: resumen.estudiantes,
+      label: "Estudiantes identificados",
+      value: resumen.estudiantes_identificados,
       color: "#1d4ed8",
+      help: `Identidades totales registradas: ${resumen.estudiantes}`,
+    },
+    {
+      label: "Registros sin vincular",
+      value: resumen.registros_sin_vincular,
+      color: "#9a3412",
+      help: "Conservados para trazabilidad",
     },
     {
       label: "Actividades",
@@ -165,6 +179,14 @@ function ResumenUnidades({ unidades }) {
               {unidad.unidad_titulo || `Unidad ${unidad.unidad_id ?? "—"}`}
             </h3>
             <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+              <dt className="text-gray-500">Estudiantes identificados</dt>
+              <dd className="text-right font-medium">
+                {unidad.estudiantes_identificados ?? 0}
+              </dd>
+              <dt className="text-gray-500">Registros sin vincular</dt>
+              <dd className="text-right font-medium">
+                {unidad.registros_sin_vincular ?? 0}
+              </dd>
               <dt className="text-gray-500">Actividades</dt>
               <dd className="text-right font-medium">{unidad.actividades ?? 0}</dd>
               <dt className="text-gray-500">Definitivas</dt>
@@ -245,14 +267,51 @@ function TablaCalificaciones({ resultados, loading }) {
                   key={`${resultado.identidad_estudiante}-${resultado.bloque_id}-${resultado.intento_id}`}
                 >
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900">
-                      {resultado.estudiante_nombre ||
-                        resultado.estudiante_username ||
-                        "Sin nombre"}
-                    </div>
-                    {resultado.estudiante_username && (
-                      <div className="text-xs text-gray-500">
-                        {resultado.estudiante_username}
+                    {resultado.identidad_tipo === "sin_vincular" ? (
+                      <div className="space-y-1">
+                        <div className="font-medium text-gray-900">
+                          Registro sin vincular
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Intento técnico #{resultado.intento_id ?? "—"}
+                        </div>
+                        <Badge variant="warning">Sin vincular</Badge>
+                      </div>
+                    ) : resultado.identidad_tipo ===
+                      "usuario_sin_estudiante" ? (
+                      <div className="space-y-1">
+                        <div className="font-medium text-gray-900">
+                          Usuario sin ficha de estudiante
+                        </div>
+                        {resultado.estudiante_username && (
+                          <div className="text-xs text-gray-500">
+                            {resultado.estudiante_username}
+                          </div>
+                        )}
+                      </div>
+                    ) : resultado.identidad_tipo === "username_inferido" ? (
+                      <div className="space-y-1">
+                        <div className="font-medium text-gray-900">
+                          Identidad por username
+                        </div>
+                        {resultado.estudiante_username && (
+                          <div className="text-xs text-gray-500">
+                            {resultado.estudiante_username}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {resultado.estudiante_nombre ||
+                            resultado.estudiante_username ||
+                            "Identidad no disponible"}
+                        </div>
+                        {resultado.estudiante_username && (
+                          <div className="text-xs text-gray-500">
+                            {resultado.estudiante_username}
+                          </div>
+                        )}
                       </div>
                     )}
                   </td>
@@ -327,7 +386,10 @@ export default function ReportePedagogicoAulaVirtual() {
     getConsolidadoCalificaciones(appliedFilters)
       .then((response) => {
         if (sequence !== requestSequence.current) return;
-        setData({ ...EMPTY_RESPONSE, ...response });
+        setData({
+          ...EMPTY_RESPONSE,
+          ...normalizarConsolidadoCalificaciones(response),
+        });
       })
       .catch((requestError) => {
         if (sequence !== requestSequence.current) return;
@@ -417,11 +479,23 @@ export default function ReportePedagogicoAulaVirtual() {
 
         <ResumenCalificaciones resumen={resumen} />
 
+        {debeMostrarAlertaCalidad(resumen) && (
+          <section
+            className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+            role="status"
+            aria-live="polite"
+          >
+            Hay {resumen.registros_sin_vincular} registros históricos sin
+            vínculo formal con un estudiante. Se conservan para trazabilidad y
+            no se contabilizan como estudiantes identificados.
+          </section>
+        )}
+
         <form
           onSubmit={aplicarFiltros}
           className="rounded-2xl border border-gray-200 bg-white p-5"
         >
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
             <label className="text-sm font-medium text-gray-700">
               Unidad
               <select
@@ -490,6 +564,21 @@ export default function ReportePedagogicoAulaVirtual() {
                 <option value="todas">Todas</option>
                 <option value="definitiva">Definitivas</option>
                 <option value="provisional">Provisionales</option>
+              </select>
+            </label>
+
+            <label className="text-sm font-medium text-gray-700">
+              Calidad de identidad
+              <select
+                value={draftFilters.calidadIdentidad}
+                onChange={(event) =>
+                  actualizarDraft("calidadIdentidad", event.target.value)
+                }
+                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 font-normal"
+              >
+                <option value="todas">Todas</option>
+                <option value="identificadas">Identificadas</option>
+                <option value="sin_vincular">Sin vincular</option>
               </select>
             </label>
 

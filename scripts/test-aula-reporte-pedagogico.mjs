@@ -1,8 +1,13 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   buildConsolidadoCalificacionesParams,
+  debeMostrarAlertaCalidad,
   formatearPuntaje,
   mapReporteApiError,
+  normalizarConsolidadoCalificaciones,
+  normalizarResultadoReporte,
+  normalizarResumenReporte,
   obtenerPublicacionVisual,
 } from "../src/utils/aulaVirtualReportePedagogico.js";
 
@@ -37,6 +42,25 @@ assert.deepEqual(defaults, {
   page_size: 50,
 });
 
+for (const calidadIdentidad of [
+  "todas",
+  "identificadas",
+  "sin_vincular",
+]) {
+  const filtro = buildConsolidadoCalificacionesParams({ calidadIdentidad });
+  assert.equal(filtro.calidad_identidad, calidadIdentidad);
+}
+assert.equal(
+  "calidad_identidad" in
+    buildConsolidadoCalificacionesParams({ calidadIdentidad: "" }),
+  false
+);
+assert.equal(
+  "calidad_identidad" in
+    buildConsolidadoCalificacionesParams({ calidadIdentidad: undefined }),
+  false
+);
+
 for (const invalid of [
   { page: 0 },
   { page: "" },
@@ -45,6 +69,7 @@ for (const invalid of [
   { usuarioId: -1 },
   { unidadId: 1.5 },
   { estadoCalificacion: "pendiente" },
+  { calidadIdentidad: "ambigua" },
 ]) {
   assert.throws(() => buildConsolidadoCalificacionesParams(invalid), TypeError);
 }
@@ -89,7 +114,14 @@ assert.equal(
 );
 
 const fixture = {
-  resumen: { promedio_definitivo: null },
+  resumen: {
+    estudiantes: 58,
+    estudiantes_identificados: 1,
+    registros_sin_vincular: 57,
+    usuarios_sin_estudiante: 0,
+    usernames_inferidos: 0,
+    promedio_definitivo: null,
+  },
   resultados: [
     {
       intento_id: 131,
@@ -101,13 +133,31 @@ const fixture = {
       estado_publicacion: "publicada",
       es_definitiva: true,
       fuente_calificacion: "revision_docente",
+      estudiante_id: 2,
+      identidad_tipo: "estudiante_vinculado",
+      vinculado: true,
+    },
+    {
+      intento_id: 4,
+      identidad_estudiante: "i:4",
+      estudiante_nombre: null,
+      estudiante_username: null,
+      estudiante_id: null,
+      identidad_tipo: "sin_vincular",
+      vinculado: false,
     },
   ],
 };
 
-assert.equal(formatearPuntaje(fixture.resumen.promedio_definitivo), "—");
-assert.equal(fixture.resultados.length, 1);
-assert.deepEqual(fixture.resultados[0], {
+const normalizado = normalizarConsolidadoCalificaciones(fixture);
+assert.equal(formatearPuntaje(normalizado.resumen.promedio_definitivo), "—");
+assert.equal(normalizado.resumen.estudiantes, 58);
+assert.equal(normalizado.resumen.estudiantes_identificados, 1);
+assert.equal(normalizado.resumen.registros_sin_vincular, 57);
+assert.equal(normalizado.resumen.usuarios_sin_estudiante, 0);
+assert.equal(normalizado.resumen.usernames_inferidos, 0);
+assert.equal(normalizado.resultados.length, 2);
+assert.deepEqual(normalizado.resultados[0], {
   intento_id: 131,
   numero_intento: 17,
   revision_id: 10,
@@ -117,6 +167,61 @@ assert.deepEqual(fixture.resultados[0], {
   estado_publicacion: "publicada",
   es_definitiva: true,
   fuente_calificacion: "revision_docente",
+  estudiante_id: 2,
+  identidad_tipo: "estudiante_vinculado",
+  vinculado: true,
 });
+assert.equal(normalizado.resultados[1].identidad_estudiante, "i:4");
+assert.equal(normalizado.resultados[1].estudiante_id, null);
+assert.equal(normalizado.resultados[1].identidad_tipo, "sin_vincular");
+assert.equal(normalizado.resultados[1].vinculado, false);
+
+const fallbackV1 = normalizarResumenReporte({ estudiantes: 8 });
+assert.equal(fallbackV1.estudiantes_identificados, 8);
+assert.equal(fallbackV1.registros_sin_vincular, 0);
+assert.equal(fallbackV1.usuarios_sin_estudiante, 0);
+assert.equal(fallbackV1.usernames_inferidos, 0);
+assert.equal(normalizarResultadoReporte({ vinculado: "true" }).vinculado, false);
+assert.equal(normalizarResultadoReporte({ vinculado: true }).vinculado, true);
+assert.equal(debeMostrarAlertaCalidad(fixture.resumen), true);
+assert.equal(debeMostrarAlertaCalidad({ registros_sin_vincular: 0 }), false);
+
+const pagina = readFileSync(
+  new URL("../src/pages/ReportePedagogicoAulaVirtual.jsx", import.meta.url),
+  "utf8"
+);
+const servicio = readFileSync(
+  new URL("../src/services/aulaVirtualReportesService.js", import.meta.url),
+  "utf8"
+);
+const utilidad = readFileSync(
+  new URL("../src/utils/aulaVirtualReportePedagogico.js", import.meta.url),
+  "utf8"
+);
+
+for (const texto of [
+  "Estudiantes identificados",
+  "Registros sin vincular",
+  "Calidad de identidad",
+  "Registro sin vincular",
+  "Intento técnico #",
+  "Usuario sin ficha de estudiante",
+  "Identidad por username",
+  "Se conservan para trazabilidad",
+]) {
+  assert.equal(pagina.includes(texto), true, texto);
+}
+assert.equal(pagina.includes('label: "Estudiantes"'), false);
+assert.match(pagina, /calidadIdentidad:\s*"todas"/);
+assert.match(pagina, /const filtros = \{ \.\.\.INITIAL_FILTERS \}/);
+assert.match(pagina, /debeMostrarAlertaCalidad\(resumen\)/);
+
+const codigoAuditado = `${pagina}\n${servicio}\n${utilidad}`;
+assert.equal(codigoAuditado.includes("X-Tenant"), false);
+assert.equal(codigoAuditado.includes("tenant_id"), false);
+assert.equal(
+  servicio.includes('"/aula-virtual/reportes/calificaciones"'),
+  true
+);
 
 console.log("Pruebas lógicas Reporte Pedagógico Aula Virtual: OK");

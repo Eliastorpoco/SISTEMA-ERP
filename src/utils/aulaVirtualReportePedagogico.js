@@ -4,6 +4,17 @@ const ESTADOS_CALIFICACION = new Set([
   "provisional",
 ]);
 
+const CALIDADES_IDENTIDAD = new Set([
+  "todas",
+  "identificadas",
+  "sin_vincular",
+]);
+
+function enteroNoNegativo(valor, fallback = 0) {
+  const numero = Number(valor);
+  return Number.isInteger(numero) && numero >= 0 ? numero : fallback;
+}
+
 function enteroPositivoOpcional(valor, nombre) {
   if (valor === undefined || valor === null || valor === "") return undefined;
 
@@ -36,6 +47,7 @@ export function buildConsolidadoCalificacionesParams({
   usuarioId,
   estudianteUsername,
   estadoCalificacion = "todas",
+  calidadIdentidad,
   page = 1,
   pageSize = 50,
 } = {}) {
@@ -46,6 +58,8 @@ export function buildConsolidadoCalificacionesParams({
   const bloque = typeof bloqueId === "string" ? bloqueId.trim() : "";
   const username =
     typeof estudianteUsername === "string" ? estudianteUsername.trim() : "";
+  const calidad =
+    typeof calidadIdentidad === "string" ? calidadIdentidad.trim() : "";
 
   if (tamanioPagina > 200) {
     throw new TypeError("pageSize debe estar entre 1 y 200.");
@@ -57,15 +71,78 @@ export function buildConsolidadoCalificacionesParams({
     );
   }
 
+  if (calidad && !CALIDADES_IDENTIDAD.has(calidad)) {
+    throw new TypeError(
+      "calidadIdentidad debe ser todas, identificadas o sin_vincular."
+    );
+  }
+
   return {
     ...(unidad !== undefined ? { unidad_id: unidad } : {}),
     ...(bloque ? { bloque_id: bloque } : {}),
     ...(usuario !== undefined ? { usuario_id: usuario } : {}),
     ...(username ? { estudiante_username: username } : {}),
     estado_calificacion: estadoCalificacion,
+    ...(calidad ? { calidad_identidad: calidad } : {}),
     page: pagina,
     page_size: tamanioPagina,
   };
+}
+
+export function normalizarResumenReporte(resumen = {}) {
+  const legacy = enteroNoNegativo(resumen?.estudiantes);
+  const contieneV11 = Object.prototype.hasOwnProperty.call(
+    resumen || {},
+    "estudiantes_identificados"
+  );
+
+  return {
+    ...(resumen || {}),
+    estudiantes: legacy,
+    estudiantes_identificados: contieneV11
+      ? enteroNoNegativo(resumen.estudiantes_identificados)
+      : legacy,
+    registros_sin_vincular: enteroNoNegativo(
+      resumen?.registros_sin_vincular
+    ),
+    usuarios_sin_estudiante: enteroNoNegativo(
+      resumen?.usuarios_sin_estudiante
+    ),
+    usernames_inferidos: enteroNoNegativo(resumen?.usernames_inferidos),
+  };
+}
+
+export function normalizarResultadoReporte(resultado = {}) {
+  return {
+    ...(resultado || {}),
+    estudiante_id:
+      resultado?.estudiante_id === null ||
+      resultado?.estudiante_id === undefined
+        ? null
+        : resultado.estudiante_id,
+    identidad_tipo:
+      typeof resultado?.identidad_tipo === "string"
+        ? resultado.identidad_tipo
+        : null,
+    vinculado: resultado?.vinculado === true,
+  };
+}
+
+export function normalizarConsolidadoCalificaciones(respuesta = {}) {
+  return {
+    ...(respuesta || {}),
+    resumen: normalizarResumenReporte(respuesta?.resumen),
+    unidades: Array.isArray(respuesta?.unidades)
+      ? respuesta.unidades.map(normalizarResumenReporte)
+      : [],
+    resultados: Array.isArray(respuesta?.resultados)
+      ? respuesta.resultados.map(normalizarResultadoReporte)
+      : [],
+  };
+}
+
+export function debeMostrarAlertaCalidad(resumen = {}) {
+  return enteroNoNegativo(resumen?.registros_sin_vincular) > 0;
 }
 
 export function formatearPuntaje(valor) {
