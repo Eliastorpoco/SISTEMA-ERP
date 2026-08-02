@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import client from '../api/client';
 import { useAuth } from '../context/useAuth';
+import {
+  calcularMetricasAsistencia,
+  cargarReporteDashboard,
+  crearParametrosReporte,
+} from '../utils/dashboardAsistencia';
 
 const MOCK_REPORTE = [
   { nombre: 'García Quispe Ana',     seccion: '4A', estado: 'presente',    fecha: '2026-05-10' },
@@ -15,12 +20,17 @@ const MOCK_REPORTE = [
   { nombre: 'Ramos Vargas Julio',    seccion: '4B', estado: 'tardanza',    fecha: '2026-05-10' },
 ];
 
+const USAR_MOCKS_DESARROLLO =
+  import.meta.env.DEV && import.meta.env.VITE_DASHBOARD_USE_MOCKS === 'true';
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [reporte, setReporte] = useState([]);
   const [seccion, setSeccion] = useState('TODAS');
   const [fecha, setFecha] = useState('');
   const [loading, setLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState('');
+  const [reporteError, setReporteError] = useState('');
 
   const seccionesDisponibles = user?.isAdmin
     ? ['4A', '4B', '5A', '5B']
@@ -29,45 +39,55 @@ export default function Dashboard() {
   useEffect(() => {
     client
       .get('/mi-dashboard')
-      .then(() => {
-        setSeccion('TODAS');
+      .then(() => setDashboardError(''))
+      .catch(() => {
+        setDashboardError('No se pudo cargar el resumen del Dashboard.');
       })
-      .finally(() => setLoading(false));
   }, [user]);
 
   useEffect(() => {
-    const params = {};
-    if (fecha) params.fecha = fecha;
-    if (seccion && seccion !== 'TODAS') {
-      params.seccion = seccion;
-    }
+    let active = true;
+    const params = crearParametrosReporte({ fecha, seccion });
 
-    client
-      .get('/reporte-asistencia', { params })
-      .then((res) => {
-        let data = res.data || [];
-        if (user?.isDocente) {
-          data = data.filter((r) => user.secciones.includes(r.seccion));
-        }
-        if (data.length === 0) {
-          console.warn('[EduERP-DEV] Sin registros en API, usando datos mock en Dashboard');
-          setReporte(MOCK_REPORTE);
-        } else {
-          setReporte(data);
-        }
+    cargarReporteDashboard({
+      request: (config) => client.get('/reporte-asistencia', config),
+      params,
+      esDocente: user?.isDocente,
+      secciones: user?.secciones || [],
+      usarMocksDesarrollo: USAR_MOCKS_DESARROLLO,
+      mocks: MOCK_REPORTE,
+    })
+      .then((data) => {
+        if (!active) return;
+        setReporte(data);
+        setReporteError('');
       })
       .catch(() => {
-        console.warn('[EduERP-DEV] API no disponible, usando datos mock en Dashboard');
-        setReporte(MOCK_REPORTE);
+        if (!active) return;
+        console.error('[EduERP] No se pudo cargar el reporte de asistencia.');
+        setReporte([]);
+        setReporteError(
+          'No se pudo cargar la asistencia. Verifica tu conexión e inténtalo nuevamente.',
+        );
+      })
+      .finally(() => {
+        if (active) setLoading(false);
       });
+
+    return () => {
+      active = false;
+    };
   }, [seccion, fecha, user]);
 
-  const total = reporte.length;
-  const presentes = reporte.filter((r) => r.estado === 'presente').length;
-  const ausentes = reporte.filter((r) => r.estado === 'falta').length;
-  const tardanzas = reporte.filter((r) => r.estado === 'tardanza').length;
-  const justificados = reporte.filter((r) => r.estado === 'justificado').length;
-  const pct = (v) => (total > 0 ? Math.round((v / total) * 100) : 0);
+  const {
+    total,
+    presentes,
+    ausentes,
+    tardanzas,
+    justificados,
+    porcentaje: pct,
+  } = calcularMetricasAsistencia(reporte);
+  const error = dashboardError || reporteError;
   const maxVal = Math.max(presentes, ausentes, tardanzas, justificados, 1);
   const CHART_H = 200;
 
@@ -114,6 +134,8 @@ export default function Dashboard() {
                 <select
                   value={seccion}
                   onChange={(e) => {
+                    setLoading(true);
+                    setReporteError('');
                     setSeccion(e.target.value);
                     setFecha('');
                   }}
@@ -143,7 +165,11 @@ export default function Dashboard() {
               <input
                 type="date"
                 value={fecha}
-                onChange={(e) => setFecha(e.target.value)}
+                onChange={(e) => {
+                  setLoading(true);
+                  setReporteError('');
+                  setFecha(e.target.value);
+                }}
                 className="w-full md:w-auto h-9 px-2 rounded-md border-0 text-sm"
               />
             </div>
@@ -151,6 +177,8 @@ export default function Dashboard() {
             {(fecha || (user?.isAdmin && seccion !== 'TODAS')) && (
               <button
                 onClick={() => {
+                  setLoading(true);
+                  setReporteError('');
                   setFecha('');
                   if (user?.isAdmin) setSeccion('TODAS');
                 }}
@@ -162,6 +190,16 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {error && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 break-words"
+        >
+          {error}
+        </div>
+      )}
 
       {/* Tarjeta destacada + 4 tarjetas de estados */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_repeat(4,1fr)] gap-2.5 mb-6">
@@ -245,6 +283,18 @@ export default function Dashboard() {
 
         {loading ? (
           <p className="text-sm text-gray-600">Cargando...</p>
+        ) : total === 0 ? (
+          <div
+            className="min-h-[252px] flex items-center justify-center px-4 text-center"
+            role="status"
+            aria-live="polite"
+          >
+            <p className="text-sm text-gray-500">
+              {reporteError
+                ? 'No fue posible mostrar los registros de asistencia.'
+                : 'No hay registros de asistencia para los filtros seleccionados.'}
+            </p>
+          </div>
         ) : (
           <div className="flex items-stretch">
             {/* Eje Y con valores */}
