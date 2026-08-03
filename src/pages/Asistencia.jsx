@@ -1,6 +1,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import client from '../api/client';
 import { useAuth } from '../context/useAuth';
+import {
+  ORIGEN_DATOS,
+  calcularMetricasSeguras,
+  construirPayloadAsistencia,
+  escrituraAsistenciaHabilitada,
+  esIdEstudianteRealValido,
+  mocksAsistenciaHabilitados,
+  validarEscrituraAsistencia,
+} from '../utils/asistenciaSafeState';
 
 /**
  * Asistencia.jsx — ERP Educativo Multi-Tenant
@@ -53,6 +62,11 @@ const ESTADO_UI_A_API = {
 };
 
 const hoy = () => new Date().toISOString().split('T')[0];
+
+const USAR_MOCKS_ASISTENCIA = mocksAsistenciaHabilitados({
+  dev: import.meta.env.DEV,
+  flag: import.meta.env.VITE_ASISTENCIA_USE_MOCKS,
+});
 
 const MOCK_SECCIONES = [
   { id: '4A', nombre: '4A' },
@@ -134,6 +148,9 @@ export default function Asistencia() {
   // Estudiantes y registros
   const [estudiantes, setEstudiantes] = useState([]);
   const [registros,   setRegistros]   = useState({}); // { [estudiante_id]: { estado, observacion } }
+  const [idsEstudiantesApi, setIdsEstudiantesApi] = useState([]);
+  const [origenDatos, setOrigenDatos] = useState(ORIGEN_DATOS.VACIO);
+  const [estadoCarga, setEstadoCarga] = useState('loading'); // loading | success | vacio | error
 
   // Historial
   const [historial, setHistorial] = useState([]);
@@ -144,6 +161,7 @@ export default function Asistencia() {
   const [loadingSecciones,  setLoadingSecciones]  = useState(true);
   const [loadingEstudiantes,setLoadingEstudiantes] = useState(false);
   const [loadingHistorial,  setLoadingHistorial]  = useState(false);
+  const [estadoHistorial, setEstadoHistorial] = useState('vacio');
   const [guardando,   setGuardando]   = useState(false);
   const [diaCerrado,  setDiaCerrado]  = useState(false);
   const [error,       setError]       = useState(null);
@@ -167,9 +185,20 @@ export default function Asistencia() {
           setSeccionId(primerNombre);
         }
       } catch {
-        console.warn('[EduERP-DEV] API secciones no disponible, usando mock');
-        setSecciones(MOCK_SECCIONES);
-        setSeccionId('4A');
+        setEstudiantes([]);
+        setIdsEstudiantesApi([]);
+        setRegistros({});
+        setOrigenDatos(ORIGEN_DATOS.ERROR);
+        setEstadoCarga('error');
+        if (USAR_MOCKS_ASISTENCIA) {
+          setSecciones(MOCK_SECCIONES);
+          setSeccionId('4A');
+          setError(null);
+        } else {
+          setSecciones([]);
+          setSeccionId('');
+          setError('No fue posible cargar las secciones institucionales.');
+        }
       } finally {
         setLoadingSecciones(false);
       }
@@ -180,6 +209,7 @@ export default function Asistencia() {
   const cargarRegistro = useCallback(async () => {
     if (!seccionId) return;
     setLoadingEstudiantes(true);
+    setEstadoCarga('loading');
     setDiaCerrado(false);
     setError(null);
     setExito(null);
@@ -191,13 +221,20 @@ export default function Asistencia() {
         client.get(`/asistencia/registro?seccion_id=${seccionId}&fecha=${fecha}`),
       ]);
 
-      const estData = resEst.data ?? [];
-      const regData = resReg.data ?? [];
+      const estData = Array.isArray(resEst.data) ? resEst.data : [];
+      const regData = Array.isArray(resReg.data) ? resReg.data : [];
+
+      if (estData.some((estudiante) => !esIdEstudianteRealValido(estudiante?.id))) {
+        throw new Error('La API devolvió identificadores de estudiante no válidos.');
+      }
 
       console.log('[EduERP] Estudiantes recibidos:', estData.length, estData[0]);
       console.log('[EduERP] Registros del día recibidos:', regData.length, regData);
 
       setEstudiantes(estData);
+      setIdsEstudiantesApi(estData.map((estudiante) => estudiante.id));
+      setOrigenDatos(estData.length > 0 ? ORIGEN_DATOS.API : ORIGEN_DATOS.VACIO);
+      setEstadoCarga(estData.length > 0 ? 'success' : 'vacio');
 
       // ¿Ya hay registros guardados para este día?
       const yaRegistrado = regData.length > 0;
@@ -232,13 +269,23 @@ export default function Asistencia() {
         data:    err?.response?.data,
         message: err?.message,
       });
-      console.warn('[EduERP-DEV] API no disponible, usando estudiantes mock');
-      setEstudiantes(MOCK_ESTUDIANTES);
-      const mapa = {};
-      MOCK_ESTUDIANTES.forEach((e) => {
-        mapa[e.id] = { estado: 'PRESENTE', observacion: '' };
-      });
-      setRegistros(mapa);
+      setIdsEstudiantesApi([]);
+      if (USAR_MOCKS_ASISTENCIA) {
+        const mapa = {};
+        MOCK_ESTUDIANTES.forEach((e) => {
+          mapa[e.id] = { estado: 'PRESENTE', observacion: '' };
+        });
+        setEstudiantes(MOCK_ESTUDIANTES);
+        setRegistros(mapa);
+        setOrigenDatos(ORIGEN_DATOS.MOCK_DEV);
+        setEstadoCarga('success');
+      } else {
+        setEstudiantes([]);
+        setRegistros({});
+        setOrigenDatos(ORIGEN_DATOS.ERROR);
+        setEstadoCarga('error');
+        setError('No fue posible cargar los estudiantes de la sección.');
+      }
     } finally {
       setLoadingEstudiantes(false);
     }
@@ -251,14 +298,22 @@ export default function Asistencia() {
     if (tab !== 'historial' || !seccionId) return;
     (async () => {
       setLoadingHistorial(true);
+      setEstadoHistorial('loading');
       try {
         const res = await client.get(
           `/asistencias?seccion=${seccionId}&mes=${histMes}&anio=${histAnio}`
         );
-        setHistorial(res.data ?? []);
-      } catch (err) {
-        console.warn('[EduERP-DEV] API historial no disponible, usando mock', err);
-        setHistorial(MOCK_HISTORIAL);
+        const data = Array.isArray(res.data) ? res.data : [];
+        setHistorial(data);
+        setEstadoHistorial(data.length > 0 ? 'success' : 'vacio');
+      } catch {
+        if (USAR_MOCKS_ASISTENCIA) {
+          setHistorial(MOCK_HISTORIAL);
+          setEstadoHistorial('success');
+        } else {
+          setHistorial([]);
+          setEstadoHistorial('vacio');
+        }
       } finally {
         setLoadingHistorial(false);
       }
@@ -291,10 +346,23 @@ export default function Asistencia() {
 
   // ── Guardar ───────────────────────────────────────────────────────
   const guardar = async () => {
-    if (!seccionId) return;
-    setGuardando(true);
     setError(null);
     setExito(null);
+    const validacion = validarEscrituraAsistencia({
+      estudiantes,
+      idsApi: idsEstudiantesApi,
+      registros,
+      origenDatos,
+      seccionId,
+      fecha,
+      dev: import.meta.env.DEV,
+    });
+    if (!validacion.valida) {
+      setError(validacion.mensaje);
+      return false;
+    }
+
+    setGuardando(true);
     try {
       console.log('[EduERP] Enviando POST con:', {
         seccion_id:       seccionId,
@@ -304,19 +372,13 @@ export default function Asistencia() {
         primer_estudiante: estudiantes[0]?.id,
         primer_estado:    registros[estudiantes[0]?.id]?.estado,
       });
-      const payload = {
+      const payload = construirPayloadAsistencia({
+        estudiantes,
+        registros,
+        seccionId,
         fecha,
-        seccion_id: seccionId,
-        registros: estudiantes.map((e) => {
-          const estadoUI  = registros[e.id]?.estado ?? 'PRESENTE';
-          const estadoAPI = ESTADO_UI_A_API[estadoUI] ?? estadoUI.toLowerCase();
-          return {
-            estudiante_id: e.id,
-            estado:        estadoAPI,
-            observacion:   registros[e.id]?.observacion ?? '',
-          };
-        }),
-      };
+        estadoUiAApi: ESTADO_UI_A_API,
+      });
       console.log('[EduERP] Payload a enviar:', payload);
       const res = await client.post('/asistencia/registro/masivo', payload);
       console.log('[EduERP] Respuesta guardar:', res.data);
@@ -326,6 +388,7 @@ export default function Asistencia() {
         `${data.registros_guardados ?? estudiantes.length} registros guardados.`
       );
       setDiaCerrado(true);
+      return true;
     } catch (err) {
       const detalle =
         err?.response?.data?.detail ??
@@ -336,6 +399,7 @@ export default function Asistencia() {
         status: err?.response?.status,
         data:   err?.response?.data,
       });
+      return false;
     } finally {
       setGuardando(false);
     }
@@ -343,21 +407,22 @@ export default function Asistencia() {
 
   // ── Cerrar día ────────────────────────────────────────────────────
   const cerrarDia = async () => {
-    await guardar();
-    setDiaCerrado(true);
-    setExito(
-      `✅ Asistencia del ${fecha} cerrada correctamente. ` +
-      `${presentes}/${total} estudiantes presentes.`
-    );
+    const guardado = await guardar();
+    if (!guardado) return false;
+    return true;
   };
 
   // ── KPIs calculados ───────────────────────────────────────────────
-  const total      = estudiantes.length;
-  const presentes  = Object.values(registros).filter((r) => r.estado === 'PRESENTE').length;
-  const faltas     = Object.values(registros).filter((r) => r.estado === 'FALTA').length;
-  const tardanzas  = Object.values(registros).filter((r) => r.estado === 'TARDANZA').length;
-  const justif     = Object.values(registros).filter((r) => r.estado === 'JUSTIFICADO').length;
-  const pct        = total > 0 ? Math.round((presentes / total) * 100) : 0;
+  const metricas = calcularMetricasSeguras(estudiantes, registros);
+  const { total, presentes, faltas, tardanzas, asistencia: pct } = metricas;
+  const escrituraHabilitada = escrituraAsistenciaHabilitada({
+    loading: loadingSecciones || loadingEstudiantes,
+    guardando,
+    origenDatos,
+    estudiantes,
+    idsApi: idsEstudiantesApi,
+    seccionId,
+  });
 
   // ── Render ────────────────────────────────────────────────────────
   return (
@@ -464,7 +529,7 @@ export default function Asistencia() {
       {tab === 'registro' && (
         <>
           {/* KPI del día */}
-          {!loadingEstudiantes && total > 0 && (
+          {!loadingEstudiantes && (
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               <KpiPill label="Total"     value={total}    color="gray"   />
               <KpiPill label="Presentes" value={presentes} color="green"  />
@@ -486,7 +551,11 @@ export default function Asistencia() {
           ) : estudiantes.length === 0 ? (
             <div className="bg-gray-50 border border-gray-200 rounded-2xl p-10 text-center">
               <p className="text-gray-400 text-sm">
-                {seccionId ? 'No hay estudiantes en esta sección.' : 'Selecciona una sección para continuar.'}
+                {estadoCarga === 'error'
+                  ? 'No fue posible cargar los estudiantes de la sección.'
+                  : seccionId
+                    ? 'No hay estudiantes registrados en esta sección.'
+                    : error || 'Selecciona una sección para continuar.'}
               </p>
             </div>
           ) : (
@@ -501,6 +570,7 @@ export default function Asistencia() {
                   <button
                     key={e.key}
                     onClick={() => marcarTodos(e.key)}
+                    disabled={!escrituraHabilitada}
                     className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all hover:shadow-sm ${e.color}`}
                   >
                     {e.full}
@@ -515,7 +585,7 @@ export default function Asistencia() {
                     <path d="M9 11l3 3L22 4" strokeLinecap="round" strokeLinejoin="round" />
                     <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" strokeLinecap="round" />
                   </svg>
-                  Asistencia registrada — puedes corregirla
+                  Asistencia guardada — puedes corregirla
                 </div>
               )}
 
@@ -579,7 +649,7 @@ export default function Asistencia() {
                   </p>
                   {diaCerrado && (
                     <p className="text-xs text-emerald-600 font-medium mt-0.5">
-                      ✓ Asistencia del día guardada
+                      ✓ Asistencia guardada
                     </p>
                   )}
                 </div>
@@ -587,7 +657,7 @@ export default function Asistencia() {
                   {/* Guardar / Actualizar — acción secundaria */}
                   <button
                     onClick={guardar}
-                    disabled={guardando || estudiantes.length === 0}
+                    disabled={!escrituraHabilitada}
                     className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white text-indigo-600 border border-indigo-300 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-indigo-50 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {guardando ? (
@@ -598,17 +668,21 @@ export default function Asistencia() {
                         </svg>
                         Guardando...
                       </>
-                    ) : diaCerrado ? '✏️ Actualizar' : '💾 Borrador'}
+                    ) : diaCerrado ? '✏️ Actualizar' : '💾 Guardar'}
                   </button>
-                  {/* Cerrar día — acción principal */}
+                  {/* Cierre institucional deshabilitado hasta disponer de contrato backend. */}
                   <button
                     onClick={cerrarDia}
-                    disabled={guardando || estudiantes.length === 0}
+                    disabled
+                    title="El cierre definitivo estará disponible cuando se implemente el flujo institucional."
                     className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-indigo-700 active:scale-95 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    {diaCerrado ? '✅ Cerrada' : '🔒 Cerrar día'}
+                    🔒 Cierre no disponible
                   </button>
                 </div>
+                <p className="w-full text-xs text-gray-500 sm:text-right">
+                  El cierre definitivo estará disponible cuando se implemente el flujo institucional.
+                </p>
               </div>
             </div>
           )}
@@ -627,9 +701,9 @@ export default function Asistencia() {
                 ))}
               </div>
             </div>
-          ) : historial.length === 0 ? (
+          ) : historial.length === 0 || estadoHistorial === 'vacio' ? (
             <div className="p-10 text-center text-gray-400 text-sm">
-              No hay registros de asistencia para este período.
+              No hay registros históricos disponibles.
             </div>
           ) : (
             <div className="overflow-x-auto">
