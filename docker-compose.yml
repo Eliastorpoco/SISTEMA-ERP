@@ -5,3 +5,8 @@ services:
     restart: always
     ports:
       - "3000:80"
+
+networks:
+  default:
+    external: true
+    name: erp_default

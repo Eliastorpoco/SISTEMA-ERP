@@ -1,0 +1,58 @@
+{
+  "id":"V1NMpConfirma26",
+  "name":"V1N - Mercado Pago Confirmación",
+  "active":false,
+  "nodes":[
+    {
+      "parameters":{"httpMethod":"POST","path":"v1n-mercadopago","responseMode":"responseNode","options":{}},
+      "id":"v1n-mp-webhook","name":"Webhook Mercado Pago","type":"n8n-nodes-base.webhook","typeVersion":2,"position":[-720,160],"webhookId":"c814f1a4-4b6b-4993-9210-110b00000001"
+    },
+    {
+      "parameters":{"jsCode":"const q=$json.query||{}; const h=$json.headers||{}; const b=$json.body||{}; const paymentId=String(q['data.id']||b.data?.id||''); if(!paymentId) throw new Error('PAYMENT_ID_AUSENTE'); return [{json:{payload:b,payment_id:paymentId,x_signature:h['x-signature']||'',x_request_id:h['x-request-id']||'',query:q}}];"},
+      "id":"v1n-mp-normalize","name":"Normalizar payment id","type":"n8n-nodes-base.code","typeVersion":2,"position":[-500,160]
+    },
+    {
+      "parameters":{"method":"POST","url":"=http://erp_api:8000/integraciones/mercadopago/webhook?data.id={{ encodeURIComponent($json.payment_id) }}","sendHeaders":true,"headerParameters":{"parameters":[{"name":"x-signature","value":"={{ $json.x_signature }}"},{"name":"x-request-id","value":"={{ $json.x_request_id }}"}]},"sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify($json.payload) }}","options":{"response":{"response":{"neverError":true}}}},
+      "id":"v1n-mp-erp","name":"Validar y aplicar ERP","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[-280,160],"notes":"FastAPI valida HMAC, persiste inbox, consulta GET payment y aplica transacción canónica."
+    },
+    {
+      "parameters":{"respondWith":"json","responseBody":"={{ JSON.stringify({received:true,resultado:$json.resultado||$json.estado||'RECIBIDO'}) }}","options":{"responseCode":200}},
+      "id":"v1n-mp-response","name":"Responder Mercado Pago","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[-40,40]
+    },
+    {
+      "parameters":{"conditions":{"options":{"caseSensitive":true,"typeValidation":"strict"},"conditions":[{"leftValue":"={{ $json.resultado }}","rightValue":"APLICADO","operator":{"type":"string","operation":"equals"}}],"combinator":"and"},"options":{}},
+      "id":"v1n-mp-if-applied","name":"Pago aplicado","type":"n8n-nodes-base.if","typeVersion":2.2,"position":[-40,240]
+    },
+    {
+      "parameters":{"jsCode":"return [{json:{...$json,message:`Pago confirmado ✅\\n\\nEstudiante: ${$json.estudiante}\\nConcepto: ${$json.concepto}\\nMonto: S/ ${Number($json.monto).toFixed(2)}\\nSaldo pendiente: S/ ${Number($json.saldo).toFixed(2)}\\nReferencia: ${$json.payment_id}`}}];"},
+      "id":"v1n-mp-text","name":"Preparar confirmacion","type":"n8n-nodes-base.code","typeVersion":2,"position":[200,200]
+    },
+    {
+      "parameters":{"method":"POST","url":"=http://evolution_v1n_api:8080/message/sendText/v1n-finanzas","authentication":"genericCredentialType","genericAuthType":"httpHeaderAuth","sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify({number:$json.whatsapp_phone,text:$json.message}) }}","options":{}},
+      "id":"v1n-mp-whatsapp","name":"WhatsApp confirmacion","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[440,200],"onError":"continueRegularOutput",
+      "credentials":{"httpHeaderAuth":{"id":"CONFIGURE_EVOLUTION_API","name":"V1N Evolution API"}}
+    },
+    {
+      "parameters":{"jsCode":"const base=$('Preparar confirmacion').first().json; const failed=Boolean($json.error)||Boolean($json.errorMessage); return [{json:{...base,confirmation_state:failed?'ERROR':'ENVIADA',confirmation_error:failed?'EVOLUTION_SEND_ERROR':null}}];"},
+      "id":"v1n-mp-send-result","name":"Resultado confirmacion","type":"n8n-nodes-base.code","typeVersion":2,"position":[660,200]
+    },
+    {
+      "parameters":{"method":"POST","url":"=http://erp_api:8000/finanzas/intentos-cobro/{{ $json.intento_id }}/confirmacion-whatsapp","authentication":"genericCredentialType","genericAuthType":"httpHeaderAuth","sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify({estado:$json.confirmation_state,error:$json.confirmation_error}) }}","options":{}},
+      "id":"v1n-mp-confirm-state","name":"Registrar estado WhatsApp","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[880,200],
+      "credentials":{"httpHeaderAuth":{"id":"CONFIGURE_ERP_INTEGRATION","name":"V1N ERP Integration"}}
+    }
+  ],
+  "connections":{
+    "Webhook Mercado Pago":{"main":[[{"node":"Normalizar payment id","type":"main","index":0}]]},
+    "Normalizar payment id":{"main":[[{"node":"Validar y aplicar ERP","type":"main","index":0}]]},
+    "Validar y aplicar ERP":{"main":[[{"node":"Responder Mercado Pago","type":"main","index":0},{"node":"Pago aplicado","type":"main","index":0}]]},
+    "Pago aplicado":{"main":[[{"node":"Preparar confirmacion","type":"main","index":0}],[]]},
+    "Preparar confirmacion":{"main":[[{"node":"WhatsApp confirmacion","type":"main","index":0}]]},
+    "WhatsApp confirmacion":{"main":[[{"node":"Resultado confirmacion","type":"main","index":0}]]},
+    "Resultado confirmacion":{"main":[[{"node":"Registrar estado WhatsApp","type":"main","index":0}]]}
+  },
+  "settings":{"executionOrder":"v1","saveDataErrorExecution":"all","saveDataSuccessExecution":"none"},
+  "versionId":"0463d329-c40b-48e7-af44-71cedd200002",
+  "meta":{"templateCredsSetupCompleted":false},
+  "tags":[]
+}

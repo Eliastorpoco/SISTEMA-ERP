@@ -1,0 +1,105 @@
+{
+  "id": "V1NWaCobros2026",
+  "name": "V1N - WhatsApp Cobros",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {"httpMethod":"POST","path":"v1n-whatsapp-cobros","authentication":"headerAuth","responseMode":"responseNode","options":{}},
+      "id":"v1n-wa-webhook","name":"Webhook WhatsApp","type":"n8n-nodes-base.webhook","typeVersion":2,"position":[-1120,160],"webhookId":"3a4a8291-4da7-4a78-90d5-110a00000001",
+      "credentials":{"httpHeaderAuth":{"id":"CONFIGURE_WHATSAPP_WEBHOOK","name":"V1N WhatsApp Webhook"}}
+    },
+    {
+      "parameters":{"jsCode":"const b=$json.body||$json; const data=b.data||b; const key=data.key||b.key||{}; const event=String(b.event||data.event||'').toUpperCase().replace(/[.\\s-]/g,'_'); const instance=String(b.instance||data.instance||b.instanceName||''); const remoteJid=String(key.remoteJid||data.remoteJid||b.sender||b.from||''); const fromMe=Boolean(key.fromMe??data.fromMe??b.fromMe??false); if(fromMe||remoteJid==='status@broadcast'||remoteJid.endsWith('@g.us')||(remoteJid.includes('@')&&!remoteJid.endsWith('@s.whatsapp.net')&&!remoteJid.endsWith('@lid'))) return []; const message=data.message||b.message||{}; const raw=String(message.conversation||message.extendedTextMessage?.text||message.imageMessage?.caption||message.videoMessage?.caption||data.text||b.text||'').trim(); if(!raw||(event&&event!=='MESSAGES_UPSERT')) return []; const identityJid=String(key.remoteJidAlt||data.remoteJidAlt||remoteJid); const phone=identityJid.replace(/@.*/,'').replace(/[^0-9]/g,''); const selected=Number((raw.match(/(?:estudiante|opcion|opción)\\s*(\\d+)/i)||[])[1]||b.selected_student_id||0)||null; const t=raw.toLowerCase(); const intent=/estado de cuenta/.test(t)?'ESTADO_CUENTA':/(pagar|quiero pagar|pagar pensi[oó]n)/.test(t)?'PAGAR':/(cu[aá]nto debo|mi deuda|deuda|saldo)/.test(t)?'SALDO':'NO_SOPORTADA'; return [{json:{phone,text:raw,intent,selected_student_id:selected,event,instance,remote_jid:remoteJid,from_me:fromMe,correlation_id:$execution.id}}];"},
+      "id":"v1n-wa-normalize","name":"Normalizar mensaje","type":"n8n-nodes-base.code","typeVersion":2,"position":[-900,160]
+    },
+    {
+      "parameters":{"url":"=http://erp_api:8000/finanzas/integraciones/whatsapp/resolver?telefono={{ encodeURIComponent($json.phone) }}","authentication":"genericCredentialType","genericAuthType":"httpHeaderAuth","options":{}},
+      "id":"v1n-wa-resolve","name":"Resolver identidad","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[-680,160],
+      "credentials":{"httpHeaderAuth":{"id":"CONFIGURE_ERP_INTEGRATION","name":"V1N ERP Integration"}}
+    },
+    {
+      "parameters":{"jsCode":"const msg=$('Normalizar mensaje').first().json; const r=$json; let selected=null; if(msg.selected_student_id) selected=(r.estudiantes||[]).find(x=>Number(x.id)===Number(msg.selected_student_id)); if(!selected && (r.estudiantes||[]).length===1) selected=r.estudiantes[0]; return [{json:{...msg,...r,selected,requires_selector:!selected}}];"},
+      "id":"v1n-wa-select","name":"Seleccionar estudiante","type":"n8n-nodes-base.code","typeVersion":2,"position":[-460,160]
+    },
+    {
+      "parameters":{"conditions":{"options":{"caseSensitive":true,"typeValidation":"strict"},"conditions":[{"leftValue":"={{ $json.requires_selector }}","operator":{"type":"boolean","operation":"true","singleValue":true}}],"combinator":"and"},"options":{}},
+      "id":"v1n-wa-if-selector","name":"Requiere selector","type":"n8n-nodes-base.if","typeVersion":2.2,"position":[-240,160]
+    },
+    {
+      "parameters":{"jsCode":"const items=($json.estudiantes||[]).map(x=>`${x.id}: ${x.nombre}`).join('\\n'); return [{json:{...$json,reply:`Encontré más de un estudiante asociado. Responde \"opción ID\":\\n${items}`}}];"},
+      "id":"v1n-wa-selector-text","name":"Preparar selector","type":"n8n-nodes-base.code","typeVersion":2,"position":[0,0]
+    },
+    {
+      "parameters":{"method":"POST","url":"=http://evolution_v1n_api:8080/message/sendText/v1n-finanzas","authentication":"genericCredentialType","genericAuthType":"httpHeaderAuth","sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify({number:$json.phone,text:$json.reply}) }}","options":{}},
+      "id":"v1n-wa-send-selector","name":"WhatsApp selector","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[240,0],
+      "credentials":{"httpHeaderAuth":{"id":"CONFIGURE_EVOLUTION_API","name":"V1N Evolution API"}}
+    },
+    {
+      "parameters":{"url":"=http://erp_api:8000/finanzas/integraciones/whatsapp/apoderados/{{ $json.apoderado_id }}/estudiantes/{{ $json.selected.id }}/estado-cuenta","authentication":"genericCredentialType","genericAuthType":"httpHeaderAuth","options":{}},
+      "id":"v1n-wa-account","name":"Consultar ERP","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[0,240],
+      "credentials":{"httpHeaderAuth":{"id":"CONFIGURE_ERP_INTEGRATION","name":"V1N ERP Integration"}}
+    },
+    {
+      "parameters":{"conditions":{"options":{"caseSensitive":true,"typeValidation":"strict"},"conditions":[{"leftValue":"={{ $('Seleccionar estudiante').first().json.intent }}","rightValue":"PAGAR","operator":{"type":"string","operation":"equals"}}],"combinator":"and"},"options":{}},
+      "id":"v1n-wa-if-pay","name":"Intencion PAGAR","type":"n8n-nodes-base.if","typeVersion":2.2,"position":[220,240]
+    },
+    {
+      "parameters":{"jsCode":"const a=$json; const pending=(a.obligaciones||[]).filter(x=>Number(x.saldo)>0); const detail=pending.map(x=>`${x.concepto} ${String(x.mes).padStart(2,'0')}/${x.anio}: S/ ${Number(x.saldo).toFixed(2)}`).join('\\n'); return [{json:{...$('Seleccionar estudiante').first().json,reply:`Estudiante: ${a.estudiante.nombre}\\nPeriodo: ${a.periodo}\\nTotal pendiente: S/ ${Number(a.total_pendiente).toFixed(2)}\\n${detail||'Sin obligaciones pendientes'}\\nPróximo vencimiento: ${a.vencimiento_proximo||'—'}`}}];"},
+      "id":"v1n-wa-balance-text","name":"Preparar saldo","type":"n8n-nodes-base.code","typeVersion":2,"position":[460,80]
+    },
+    {
+      "parameters":{"jsCode":"const pending=($json.obligaciones||[]).filter(x=>Number(x.saldo)>0).sort((a,b)=>String(a.vencimiento).localeCompare(String(b.vencimiento))); if(!pending.length) throw new Error('SIN_OBLIGACION_PENDIENTE'); return [{json:{...$('Seleccionar estudiante').first().json,obligacion:pending[0]}}];"},
+      "id":"v1n-wa-obligation","name":"Elegir obligacion concreta","type":"n8n-nodes-base.code","typeVersion":2,"position":[460,320],"notes":"V1 cobra saldo completo de la obligación seleccionada; no acepta monto arbitrario."
+    },
+    {
+      "parameters":{"method":"POST","url":"=http://erp_api:8000/finanzas/integraciones/whatsapp/apoderados/{{ $json.apoderado_id }}/estudiantes/{{ $json.selected.id }}/intentos-cobro","authentication":"genericCredentialType","genericAuthType":"httpHeaderAuth","sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify({obligacion_id:$json.obligacion.obligacion_id,apoderado_id:$json.apoderado_id}) }}","options":{}},
+      "id":"v1n-wa-attempt","name":"Crear intento ERP","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[680,320],
+      "credentials":{"httpHeaderAuth":{"id":"CONFIGURE_ERP_INTEGRATION","name":"V1N ERP Integration"}}
+    },
+    {
+      "parameters":{"method":"POST","url":"https://api.mercadopago.com/checkout/preferences","authentication":"genericCredentialType","genericAuthType":"httpHeaderAuth","sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify({items:[{title:'Obligación educativa '+$json.external_reference,quantity:1,currency_id:$json.moneda,unit_price:Number($json.monto)}],external_reference:$json.external_reference,notification_url:$env.N8N_BASE_URL+'/webhook/v1n-mercadopago'}) }}","options":{}},
+      "id":"v1n-wa-preference","name":"Mercado Pago preference","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[900,320],
+      "credentials":{"httpHeaderAuth":{"id":"CONFIGURE_MERCADOPAGO_TEST","name":"V1N Mercado Pago TEST"}}
+    },
+    {
+      "parameters":{"method":"PATCH","url":"=http://erp_api:8000/finanzas/intentos-cobro/{{ $('Crear intento ERP').first().json.id }}/preferencia","authentication":"genericCredentialType","genericAuthType":"httpHeaderAuth","sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify({preference_id:$json.id,checkout_url:$json.sandbox_init_point||$json.init_point}) }}","options":{}},
+      "id":"v1n-wa-save-preference","name":"Persistir preference","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[1120,320],
+      "credentials":{"httpHeaderAuth":{"id":"CONFIGURE_ERP_INTEGRATION","name":"V1N ERP Integration"}}
+    },
+    {
+      "parameters":{"jsCode":"const i=$json; const s=$('Seleccionar estudiante').first().json; return [{json:{...s,reply:`Hola ${s.selected.nombre}.\\nTienes una obligación pendiente de S/ ${Number(i.monto).toFixed(2)}.\\n\\nPuedes realizar el pago TEST aquí:\\n${i.checkout_url}\\n\\nReferencia:\\n${i.external_reference}`}}];"},
+      "id":"v1n-wa-link-text","name":"Preparar link","type":"n8n-nodes-base.code","typeVersion":2,"position":[1340,320]
+    },
+    {
+      "parameters":{"method":"POST","url":"=http://evolution_v1n_api:8080/message/sendText/v1n-finanzas","authentication":"genericCredentialType","genericAuthType":"httpHeaderAuth","sendBody":true,"specifyBody":"json","jsonBody":"={{ JSON.stringify({number:$json.phone,text:$json.reply}) }}","options":{}},
+      "id":"v1n-wa-send","name":"WhatsApp respuesta","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[1580,200],
+      "credentials":{"httpHeaderAuth":{"id":"CONFIGURE_EVOLUTION_API","name":"V1N Evolution API"}}
+    },
+    {
+      "parameters":{"respondWith":"json","responseBody":"={\"received\":true}","options":{}},
+      "id":"v1n-wa-response","name":"Respuesta webhook","type":"n8n-nodes-base.respondToWebhook","typeVersion":1,"position":[1800,200]
+    }
+  ],
+  "connections":{
+    "Webhook WhatsApp":{"main":[[{"node":"Normalizar mensaje","type":"main","index":0}]]},
+    "Normalizar mensaje":{"main":[[{"node":"Resolver identidad","type":"main","index":0}]]},
+    "Resolver identidad":{"main":[[{"node":"Seleccionar estudiante","type":"main","index":0}]]},
+    "Seleccionar estudiante":{"main":[[{"node":"Requiere selector","type":"main","index":0}]]},
+    "Requiere selector":{"main":[[{"node":"Preparar selector","type":"main","index":0}],[{"node":"Consultar ERP","type":"main","index":0}]]},
+    "Preparar selector":{"main":[[{"node":"WhatsApp selector","type":"main","index":0}]]},
+    "WhatsApp selector":{"main":[[{"node":"Respuesta webhook","type":"main","index":0}]]},
+    "Consultar ERP":{"main":[[{"node":"Intencion PAGAR","type":"main","index":0}]]},
+    "Intencion PAGAR":{"main":[[{"node":"Elegir obligacion concreta","type":"main","index":0}],[{"node":"Preparar saldo","type":"main","index":0}]]},
+    "Preparar saldo":{"main":[[{"node":"WhatsApp respuesta","type":"main","index":0}]]},
+    "Elegir obligacion concreta":{"main":[[{"node":"Crear intento ERP","type":"main","index":0}]]},
+    "Crear intento ERP":{"main":[[{"node":"Mercado Pago preference","type":"main","index":0}]]},
+    "Mercado Pago preference":{"main":[[{"node":"Persistir preference","type":"main","index":0}]]},
+    "Persistir preference":{"main":[[{"node":"Preparar link","type":"main","index":0}]]},
+    "Preparar link":{"main":[[{"node":"WhatsApp respuesta","type":"main","index":0}]]},
+    "WhatsApp respuesta":{"main":[[{"node":"Respuesta webhook","type":"main","index":0}]]}
+  },
+  "settings":{"executionOrder":"v1","saveDataErrorExecution":"all","saveDataSuccessExecution":"none"},
+  "versionId":"74bdcfe1-f181-4ba6-9803-71cedd200001",
+  "meta":{"templateCredsSetupCompleted":false},
+  "tags":[]
+}

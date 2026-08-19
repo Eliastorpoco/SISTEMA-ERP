@@ -20,7 +20,7 @@ const NAV_ITEMS = [
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" strokeLinecap="round"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" strokeLinecap="round"/><path d="M12 12v4M10 14h4" strokeLinecap="round"/></svg> },
   { label:'Biblioteca', to:'/biblioteca', group:'Administrativo', roles:['DIRECTOR','ADMIN','DOCENTE'],
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" strokeLinecap="round"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" strokeLinecap="round"/></svg> },
-  { label:'Finanzas', to:'/finanzas', group:'Finanzas', roles:['DIRECTOR','ADMIN'],
+  { label:'Finanzas', to:'/finanzas', group:'Finanzas', roles:['DIRECTOR','ADMIN','ESTUDIANTE'],
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><line x1="12" y1="1" x2="12" y2="23" strokeLinecap="round"/><path d="M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6" strokeLinecap="round"/></svg> },
   { label:'Presupuesto', to:'/presupuesto', group:'Finanzas', roles:['DIRECTOR','ADMIN'],
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" strokeLinecap="round"/><polyline points="14 2 14 8 20 8" strokeLinecap="round"/><line x1="16" y1="13" x2="8" y2="13" strokeLinecap="round"/><line x1="16" y1="17" x2="8" y2="17" strokeLinecap="round"/></svg> },
