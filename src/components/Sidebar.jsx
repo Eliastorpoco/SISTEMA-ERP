@@ -10,7 +10,7 @@ const NAV_ITEMS = [
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" strokeLinecap="round"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4" strokeLinecap="round"/></svg> },
   { label:'Matrícula', to:'/matricula', group:'Académico', roles:['DIRECTOR','ADMIN'],
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" strokeLinecap="round"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6" strokeLinecap="round"/></svg> },
-  { label:'Incidencias', to:'/incidencias', group:'Académico', roles:['DIRECTOR','ADMIN','DOCENTE'],
+  { label:'Incidencias', to:'/incidencias', group:'Académico', roles:['DIRECTOR','ADMIN','DOCENTE','ESTUDIANTE'],
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" strokeLinecap="round"/><path d="M12 9v4M12 17h.01" strokeLinecap="round"/></svg> },
   { label:'Docentes', to:'/docentes', group:'Administrativo', roles:['DIRECTOR','ADMIN'],
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" strokeLinecap="round"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" strokeLinecap="round"/></svg> },

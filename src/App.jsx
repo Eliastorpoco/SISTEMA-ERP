@@ -23,6 +23,7 @@ const Finanzas = lazy(() => import('./pages/Finanzas'));
 const Notificaciones = lazy(() => import('./pages/Notificaciones'));
 const Proximamente = lazy(() => import('./pages/Proximamente'));
 const Docentes = lazy(() => import('./pages/Docentes'));
+const IncidenciasAcademicas = lazy(() => import('./pages/IncidenciasAcademicas.jsx'));
 const AIConfigPage  = lazy(() => import('./pages/configuracion/AIConfigPage'));
 
 function DashboardSegunRol() {
@@ -55,7 +56,7 @@ const privateRoutes = [
   // Rutas para módulos en construcción (sidebar apuntaba a estas)
   { path: 'evaluaciones',  element: <Evaluaciones />,  roles: [Rol.ADMIN, Rol.DOCENTE] },
   { path: 'matricula',     element: <Proximamente titulo="Matrícula" />,     roles: [Rol.ADMIN] },
-  { path: 'incidencias',   element: <Proximamente titulo="Incidencias" />,   roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'incidencias', element: <IncidenciasAcademicas />, roles: [Rol.DIRECTOR, Rol.ADMIN, Rol.DOCENTE, Rol.ESTUDIANTE] },
   { path: 'docentes', element: <Docentes />, roles: [Rol.ADMIN] },
   { path: 'horarios',      element: <Proximamente titulo="Horarios" />,      roles: [Rol.ADMIN, Rol.DOCENTE] },
   { path: 'inventario',    element: <Proximamente titulo="Inventario" />,    roles: [Rol.ADMIN] },

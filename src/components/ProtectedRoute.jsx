@@ -1,7 +1,9 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import { normalizarRol } from "../types/roles";
 
 const normalizeRole = (role) =>
+  normalizarRol(String(role || "").trim()) ||
   String(role || "").trim().toUpperCase();
 
 export default function ProtectedRoute({
