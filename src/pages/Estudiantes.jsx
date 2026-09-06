@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import { useAuth } from '../context/useAuth';
+import { ConsultarApoderados } from '../components/ComunicacionApoderado';
 
 // Paleta de colores para las tarjetas de seccion
 const SECTION_COLORS = {
@@ -483,6 +484,7 @@ export default function Estudiantes() {
                           <span>📊</span>
                           Ver reporte
                         </button>
+                        <ConsultarApoderados estudianteId={e.id} estudianteNombre={e.nombre} />
                       </td>
                     </tr>
                   );
@@ -535,6 +537,7 @@ export default function Estudiantes() {
                       </div>
                     </div>
 
+                    <ConsultarApoderados estudianteId={e.id} estudianteNombre={e.nombre} />
                     {/* Flecha */}
                     <div className="text-slate-300 text-xl flex-shrink-0">›</div>
                   </div>

@@ -1,0 +1,3 @@
+services:
+  erp-frontend:
+    image: erp-frontend:v1md-r1-20260906

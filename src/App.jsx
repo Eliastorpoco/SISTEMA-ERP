@@ -12,9 +12,10 @@ const AulaVirtual = lazy(() => import('./pages/AulaVirtual.jsx'));
 const AulaVirtualEstudiante = lazy(() => import('./pages/AulaVirtualEstudiante.jsx'));
 const ReportePedagogicoAulaVirtual = lazy(() => import('./pages/ReportePedagogicoAulaVirtual.jsx'));
 const Evaluaciones = lazy(() => import('./pages/Evaluaciones.jsx'));
-const Asistencia = lazy(() => import('./pages/Asistencia'));
+const Asistencia = lazy(() => import('./pages/Asistencia.jsx'));
 const Reporte = lazy(() => import('./pages/Reporte'));
 const Estudiantes = lazy(() => import('./pages/Estudiantes'));
+const ApoderadosComunicacion = lazy(() => import('./pages/ApoderadosComunicacion.jsx'));
 const ReporteEstudiante = lazy(() => import('./pages/ReporteEstudiante'));
 const PanelDirector = lazy(() => import('./pages/PanelDirector'));
 // Nuevos módulos
@@ -50,11 +51,13 @@ const privateRoutes = [
 
   { path: 'asistencia', element: <Asistencia />, roles: [Rol.ADMIN, Rol.DOCENTE] },
   { path: 'reporte', element: <Reporte />, roles: [Rol.ADMIN, Rol.DOCENTE] },
-  { path: 'estudiantes', element: <Estudiantes />, roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'estudiantes', element: <Estudiantes />, roles: [Rol.DIRECTOR, Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'apoderados', element: <ApoderadosComunicacion />, roles: [Rol.DIRECTOR, Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'comunicaciones', element: <ApoderadosComunicacion />, roles: [Rol.DIRECTOR, Rol.ADMIN, Rol.DOCENTE] },
   { path: 'reporte-estudiante', element: <ReporteEstudiante />, roles: [Rol.ADMIN, Rol.DOCENTE] },
 
   // Rutas para módulos en construcción (sidebar apuntaba a estas)
-  { path: 'evaluaciones',  element: <Evaluaciones />,  roles: [Rol.ADMIN, Rol.DOCENTE] },
+  { path: 'evaluaciones',  element: <Evaluaciones />,  roles: [Rol.DIRECTOR, Rol.ADMIN, Rol.DOCENTE, Rol.ESTUDIANTE] },
   { path: 'matricula',     element: <Proximamente titulo="Matrícula" />,     roles: [Rol.ADMIN] },
   { path: 'incidencias', element: <IncidenciasAcademicas />, roles: [Rol.DIRECTOR, Rol.ADMIN, Rol.DOCENTE, Rol.ESTUDIANTE] },
   { path: 'docentes', element: <Docentes />, roles: [Rol.ADMIN] },

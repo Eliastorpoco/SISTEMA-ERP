@@ -1,0 +1,1485 @@
+{
+  "base_image": "erp-backend:v1mf-guardian-active-20260906",
+  "candidate_image": "erp-backend:evaluacion-p1-r2-20260906T025500Z",
+  "base_route_count": 203,
+  "candidate_route_count": 210,
+  "missing_base_routes": [],
+  "added_routes": [
+    {
+      "endpoint": "controllers.evaluaciones_controller.catalogos",
+      "methods": [
+        "GET"
+      ],
+      "path": "/evaluaciones/catalogos"
+    },
+    {
+      "endpoint": "controllers.evaluaciones_controller.crear_competencia",
+      "methods": [
+        "POST"
+      ],
+      "path": "/evaluaciones/competencias"
+    },
+    {
+      "endpoint": "controllers.evaluaciones_controller.listar_evaluaciones",
+      "methods": [
+        "GET"
+      ],
+      "path": "/evaluaciones"
+    },
+    {
+      "endpoint": "controllers.evaluaciones_controller.crear_evaluacion",
+      "methods": [
+        "POST"
+      ],
+      "path": "/evaluaciones"
+    },
+    {
+      "endpoint": "controllers.evaluaciones_controller.estudiantes_elegibles",
+      "methods": [
+        "GET"
+      ],
+      "path": "/evaluaciones/{evaluation_id}/estudiantes"
+    },
+    {
+      "endpoint": "controllers.evaluaciones_controller.resultados",
+      "methods": [
+        "GET"
+      ],
+      "path": "/evaluaciones/{evaluation_id}/resultados"
+    },
+    {
+      "endpoint": "controllers.evaluaciones_controller.guardar_resultado",
+      "methods": [
+        "PUT"
+      ],
+      "path": "/evaluaciones/{evaluation_id}/resultados"
+    }
+  ],
+  "base_routes": [
+    {
+      "endpoint": "fastapi.applications.FastAPI.setup.<locals>.openapi",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "path": "/openapi.json"
+    },
+    {
+      "endpoint": "fastapi.applications.FastAPI.setup.<locals>.swagger_ui_html",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "path": "/docs"
+    },
+    {
+      "endpoint": "fastapi.applications.FastAPI.setup.<locals>.swagger_ui_redirect",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "path": "/docs/oauth2-redirect"
+    },
+    {
+      "endpoint": "fastapi.applications.FastAPI.setup.<locals>.redoc_html",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "path": "/redoc"
+    },
+    {
+      "endpoint": "main.aula_virtual_tareas_compat",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/tareas"
+    },
+    {
+      "endpoint": "controllers.controllers.AuthController.register",
+      "methods": [
+        "POST"
+      ],
+      "path": "/auth/register"
+    },
+    {
+      "endpoint": "controllers.controllers.AuthController.login",
+      "methods": [
+        "POST"
+      ],
+      "path": "/auth/login"
+    },
+    {
+      "endpoint": "controllers.academic_core_controller.attendance_sections",
+      "methods": [
+        "GET"
+      ],
+      "path": "/asistencia/secciones"
+    },
+    {
+      "endpoint": "controllers.academic_core_controller.attendance_students",
+      "methods": [
+        "GET"
+      ],
+      "path": "/asistencia/estudiantes"
+    },
+    {
+      "endpoint": "controllers.academic_core_controller.attendance_register",
+      "methods": [
+        "GET"
+      ],
+      "path": "/asistencia/registro"
+    },
+    {
+      "endpoint": "controllers.academic_core_controller.save_attendance",
+      "methods": [
+        "POST"
+      ],
+      "path": "/asistencia/registro/masivo"
+    },
+    {
+      "endpoint": "controllers.academic_core_controller.attendance_report",
+      "methods": [
+        "GET"
+      ],
+      "path": "/reporte-asistencia"
+    },
+    {
+      "endpoint": "controllers.academic_core_controller.evaluation_results",
+      "methods": [
+        "GET"
+      ],
+      "path": "/integracion-ia/resultados"
+    },
+    {
+      "endpoint": "controllers.academic_core_controller.teachers",
+      "methods": [
+        "GET"
+      ],
+      "path": "/docentes"
+    },
+    {
+      "endpoint": "controllers.academic_core_controller.reject_legacy_evaluation",
+      "methods": [
+        "POST"
+      ],
+      "path": "/integracion-ia/evaluaciones"
+    },
+    {
+      "endpoint": "controllers.academic_core_controller.reject_legacy_validation",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/integracion-ia/evaluaciones/{result_id}/validar"
+    },
+    {
+      "endpoint": "controllers.academic_core_controller.director_kpi",
+      "methods": [
+        "GET"
+      ],
+      "path": "/dashboard/directivo"
+    },
+    {
+      "endpoint": "controllers.controllers.AsistenciaController.guardar",
+      "methods": [
+        "POST"
+      ],
+      "path": "/asistencias"
+    },
+    {
+      "endpoint": "controllers.controllers.AsistenciaController.guardar_lote",
+      "methods": [
+        "POST"
+      ],
+      "path": "/asistencias/lote"
+    },
+    {
+      "endpoint": "controllers.controllers.AsistenciaController.guardar_mi_lote",
+      "methods": [
+        "POST"
+      ],
+      "path": "/mi-asistencia/lote"
+    },
+    {
+      "endpoint": "controllers.controllers.AsistenciaController.listar_secciones",
+      "methods": [
+        "GET"
+      ],
+      "path": "/asistencia/secciones"
+    },
+    {
+      "endpoint": "controllers.controllers.AsistenciaController.listar_estudiantes",
+      "methods": [
+        "GET"
+      ],
+      "path": "/asistencia/estudiantes"
+    },
+    {
+      "endpoint": "controllers.controllers.AsistenciaController.registro_masivo",
+      "methods": [
+        "POST"
+      ],
+      "path": "/asistencia/registro/masivo"
+    },
+    {
+      "endpoint": "controllers.controllers.AsistenciaController.get_registro",
+      "methods": [
+        "GET"
+      ],
+      "path": "/asistencia/registro"
+    },
+    {
+      "endpoint": "controllers.controllers.ReporteController.reporte",
+      "methods": [
+        "GET"
+      ],
+      "path": "/reporte-asistencia"
+    },
+    {
+      "endpoint": "controllers.controllers.ReporteController.dashboard",
+      "methods": [
+        "GET"
+      ],
+      "path": "/mi-dashboard"
+    },
+    {
+      "endpoint": "controllers.notification_controller.NotificacionController._registrar_rutas.<locals>.canales_disponibles",
+      "methods": [
+        "GET"
+      ],
+      "path": "/notificaciones/canales"
+    },
+    {
+      "endpoint": "controllers.notification_controller.NotificacionController._registrar_rutas.<locals>.enviar_notificacion",
+      "methods": [
+        "POST"
+      ],
+      "path": "/notificaciones/enviar"
+    },
+    {
+      "endpoint": "controllers.notification_controller.NotificacionController._registrar_rutas.<locals>.enviar_emergencia",
+      "methods": [
+        "POST"
+      ],
+      "path": "/notificaciones/emergencia"
+    },
+    {
+      "endpoint": "controllers.notification_controller.NotificacionController._registrar_rutas.<locals>.notificar_falta",
+      "methods": [
+        "POST"
+      ],
+      "path": "/notificaciones/falta"
+    },
+    {
+      "endpoint": "controllers.notification_controller.NotificacionController._registrar_rutas.<locals>.notificar_pago_vencido",
+      "methods": [
+        "POST"
+      ],
+      "path": "/notificaciones/pago-vencido"
+    },
+    {
+      "endpoint": "controllers.notification_controller.NotificacionController._registrar_rutas.<locals>.enviar_masivo",
+      "methods": [
+        "POST"
+      ],
+      "path": "/notificaciones/masivo"
+    },
+    {
+      "endpoint": "controllers.kpi_controller.KPIController.dashboard_directivo",
+      "methods": [
+        "GET"
+      ],
+      "path": "/dashboard/directivo"
+    },
+    {
+      "endpoint": "controllers.kpi_controller.KPIController.kpi_asistencia",
+      "methods": [
+        "GET"
+      ],
+      "path": "/dashboard/kpi/asistencia"
+    },
+    {
+      "endpoint": "controllers.kpi_controller.KPIController.alertas_resumen",
+      "methods": [
+        "GET"
+      ],
+      "path": "/dashboard/alertas/resumen"
+    },
+    {
+      "endpoint": "controllers.kpi_controller.KPIController.alertas_resumen",
+      "methods": [
+        "GET"
+      ],
+      "path": "/dashboard/alertas/resumen"
+    },
+    {
+      "endpoint": "controllers.finanzas_controller.FinanzasController.crear_concepto",
+      "methods": [
+        "POST"
+      ],
+      "path": "/finanzas/conceptos"
+    },
+    {
+      "endpoint": "controllers.finanzas_controller.FinanzasController.listar_conceptos",
+      "methods": [
+        "GET"
+      ],
+      "path": "/finanzas/conceptos"
+    },
+    {
+      "endpoint": "controllers.finanzas_controller.FinanzasController.registrar_pension",
+      "methods": [
+        "POST"
+      ],
+      "path": "/finanzas/pensiones"
+    },
+    {
+      "endpoint": "controllers.finanzas_controller.FinanzasController.listar_pensiones",
+      "methods": [
+        "GET"
+      ],
+      "path": "/finanzas/pensiones"
+    },
+    {
+      "endpoint": "controllers.finanzas_controller.FinanzasController.registrar_pago",
+      "methods": [
+        "POST"
+      ],
+      "path": "/finanzas/pagos"
+    },
+    {
+      "endpoint": "controllers.finanzas_controller.FinanzasController.dashboard",
+      "methods": [
+        "GET"
+      ],
+      "path": "/finanzas/dashboard"
+    },
+    {
+      "endpoint": "controllers.finanzas_controller.FinanzasController.reporte_mes",
+      "methods": [
+        "GET"
+      ],
+      "path": "/finanzas/reporte/mes"
+    },
+    {
+      "endpoint": "controllers.finanzas_controller.FinanzasController.get_morosos",
+      "methods": [
+        "GET"
+      ],
+      "path": "/finanzas/morosos"
+    },
+    {
+      "endpoint": "controllers.finanzas_controller.FinanzasController.configurar_timezone",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/finanzas/configuracion/calendario"
+    },
+    {
+      "endpoint": "controllers.finanzas_controller.FinanzasController.configurar_concepto_calendario",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/finanzas/conceptos/{concepto_id}/calendario"
+    },
+    {
+      "endpoint": "controllers.finanzas_integraciones_controller.estado_cuenta",
+      "methods": [
+        "GET"
+      ],
+      "path": "/finanzas/estudiantes/{estudiante_id}/estado-cuenta"
+    },
+    {
+      "endpoint": "controllers.finanzas_integraciones_controller.mi_estado_cuenta",
+      "methods": [
+        "GET"
+      ],
+      "path": "/finanzas/mi-estado-cuenta"
+    },
+    {
+      "endpoint": "controllers.finanzas_integraciones_controller.estado_cuenta_whatsapp",
+      "methods": [
+        "GET"
+      ],
+      "path": "/finanzas/integraciones/whatsapp/apoderados/{apoderado_id}/estudiantes/{estudiante_id}/estado-cuenta"
+    },
+    {
+      "endpoint": "controllers.finanzas_integraciones_controller.listar_obligaciones",
+      "methods": [
+        "GET"
+      ],
+      "path": "/finanzas/obligaciones"
+    },
+    {
+      "endpoint": "controllers.finanzas_integraciones_controller.crear_intento",
+      "methods": [
+        "POST"
+      ],
+      "path": "/finanzas/intentos-cobro"
+    },
+    {
+      "endpoint": "controllers.finanzas_integraciones_controller.crear_intento_whatsapp",
+      "methods": [
+        "POST"
+      ],
+      "path": "/finanzas/integraciones/whatsapp/apoderados/{apoderado_id}/estudiantes/{estudiante_id}/intentos-cobro"
+    },
+    {
+      "endpoint": "controllers.finanzas_integraciones_controller.guardar_preferencia",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/finanzas/intentos-cobro/{intento_id}/preferencia"
+    },
+    {
+      "endpoint": "controllers.finanzas_integraciones_controller.marcar_error_preferencia",
+      "methods": [
+        "POST"
+      ],
+      "path": "/finanzas/intentos-cobro/{intento_id}/error"
+    },
+    {
+      "endpoint": "controllers.finanzas_integraciones_controller.marcar_confirmacion_whatsapp",
+      "methods": [
+        "POST"
+      ],
+      "path": "/finanzas/intentos-cobro/{intento_id}/confirmacion-whatsapp"
+    },
+    {
+      "endpoint": "controllers.finanzas_integraciones_controller.listar_intentos",
+      "methods": [
+        "GET"
+      ],
+      "path": "/finanzas/intentos-cobro"
+    },
+    {
+      "endpoint": "controllers.finanzas_integraciones_controller.listar_pagos",
+      "methods": [
+        "GET"
+      ],
+      "path": "/finanzas/pagos"
+    },
+    {
+      "endpoint": "controllers.finanzas_integraciones_controller.integraciones_estado",
+      "methods": [
+        "GET"
+      ],
+      "path": "/finanzas/integraciones/estado"
+    },
+    {
+      "endpoint": "controllers.finanzas_integraciones_controller.resolver_whatsapp",
+      "methods": [
+        "GET"
+      ],
+      "path": "/finanzas/integraciones/whatsapp/resolver"
+    },
+    {
+      "endpoint": "controllers.finanzas_integraciones_controller.webhook_mercadopago",
+      "methods": [
+        "POST"
+      ],
+      "path": "/integraciones/mercadopago/webhook"
+    },
+    {
+      "endpoint": "controllers.finanzas_integraciones_controller.confirmar_mercadopago",
+      "methods": [
+        "POST"
+      ],
+      "path": "/finanzas/integraciones/mercadopago/confirmar"
+    },
+    {
+      "endpoint": "controllers.obligaciones_masivas_controller.previsualizar_generacion_masiva",
+      "methods": [
+        "POST"
+      ],
+      "path": "/finanzas/obligaciones/generacion-masiva/previsualizar"
+    },
+    {
+      "endpoint": "controllers.obligaciones_masivas_controller.ejecutar_generacion_masiva",
+      "methods": [
+        "POST"
+      ],
+      "path": "/finanzas/obligaciones/generacion-masiva"
+    },
+    {
+      "endpoint": "controllers.estudiantes_controller.listar_estudiantes",
+      "methods": [
+        "GET"
+      ],
+      "path": "/estudiantes"
+    },
+    {
+      "endpoint": "controllers.estudiantes_controller.obtener_estudiante",
+      "methods": [
+        "GET"
+      ],
+      "path": "/estudiantes/{estudiante_id}"
+    },
+    {
+      "endpoint": "controllers.estudiantes_controller.actualizar_email_estudiante",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/estudiantes/{estudiante_id}"
+    },
+    {
+      "endpoint": "controllers.roles_controller.listar_roles",
+      "methods": [
+        "GET"
+      ],
+      "path": "/roles"
+    },
+    {
+      "endpoint": "controllers.roles_controller.obtener_rol",
+      "methods": [
+        "GET"
+      ],
+      "path": "/roles/{rol_id}"
+    },
+    {
+      "endpoint": "controllers.permisos_controller.listar_permisos",
+      "methods": [
+        "GET"
+      ],
+      "path": "/permisos"
+    },
+    {
+      "endpoint": "controllers.permisos_controller.obtener_permiso",
+      "methods": [
+        "GET"
+      ],
+      "path": "/permisos/{permiso_id}"
+    },
+    {
+      "endpoint": "controllers.rol_permisos_controller.listar_rol_permisos",
+      "methods": [
+        "GET"
+      ],
+      "path": "/rol-permisos"
+    },
+    {
+      "endpoint": "controllers.rol_permisos_controller.obtener_permisos_por_rol",
+      "methods": [
+        "GET"
+      ],
+      "path": "/rol-permisos/{rol_id}"
+    },
+    {
+      "endpoint": "controllers.usuario_roles_controller.listar_usuario_roles",
+      "methods": [
+        "GET"
+      ],
+      "path": "/usuario-roles"
+    },
+    {
+      "endpoint": "controllers.usuario_roles_controller.obtener_roles_por_usuario",
+      "methods": [
+        "GET"
+      ],
+      "path": "/usuario-roles/{usuario_id}"
+    },
+    {
+      "endpoint": "controllers.tenants_controller.listar_tenants",
+      "methods": [
+        "GET"
+      ],
+      "path": "/tenants"
+    },
+    {
+      "endpoint": "controllers.tenants_controller.obtener_tenant",
+      "methods": [
+        "GET"
+      ],
+      "path": "/tenants/{tenant_id}"
+    },
+    {
+      "endpoint": "controllers.instituciones_controller.listar_instituciones",
+      "methods": [
+        "GET"
+      ],
+      "path": "/instituciones"
+    },
+    {
+      "endpoint": "controllers.instituciones_controller.obtener_institucion",
+      "methods": [
+        "GET"
+      ],
+      "path": "/instituciones/{institucion_id}"
+    },
+    {
+      "endpoint": "controllers.niveles_educativos_controller.listar_niveles_educativos",
+      "methods": [
+        "GET"
+      ],
+      "path": "/niveles-educativos"
+    },
+    {
+      "endpoint": "controllers.niveles_educativos_controller.obtener_nivel_educativo",
+      "methods": [
+        "GET"
+      ],
+      "path": "/niveles-educativos/{nivel_id}"
+    },
+    {
+      "endpoint": "controllers.docentes_controller.listar_docentes",
+      "methods": [
+        "GET"
+      ],
+      "path": "/docentes"
+    },
+    {
+      "endpoint": "controllers.docentes_controller.obtener_docente",
+      "methods": [
+        "GET"
+      ],
+      "path": "/docentes/{docente_id}"
+    },
+    {
+      "endpoint": "controllers.matriculas_controller.listar_matriculas",
+      "methods": [
+        "GET"
+      ],
+      "path": "/matriculas"
+    },
+    {
+      "endpoint": "controllers.matriculas_controller.crear_matricula",
+      "methods": [
+        "POST"
+      ],
+      "path": "/matriculas"
+    },
+    {
+      "endpoint": "controllers.matriculas_controller.listar_mis_matriculas",
+      "methods": [
+        "GET"
+      ],
+      "path": "/matriculas/me"
+    },
+    {
+      "endpoint": "controllers.matriculas_controller.listar_mis_asignaciones",
+      "methods": [
+        "GET"
+      ],
+      "path": "/matriculas/me/asignaciones"
+    },
+    {
+      "endpoint": "controllers.matriculas_controller.actualizar_matricula",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/matriculas/{matricula_id}"
+    },
+    {
+      "endpoint": "controllers.asignaciones_docente_controller.listar_asignaciones",
+      "methods": [
+        "GET"
+      ],
+      "path": "/asignaciones-docente"
+    },
+    {
+      "endpoint": "controllers.asignaciones_docente_controller.obtener_asignacion",
+      "methods": [
+        "GET"
+      ],
+      "path": "/asignaciones-docente/{asignacion_id}"
+    },
+    {
+      "endpoint": "controllers.asignaciones_docente_controller.crear_asignacion",
+      "methods": [
+        "POST"
+      ],
+      "path": "/asignaciones-docente"
+    },
+    {
+      "endpoint": "controllers.asignaciones_docente_controller.actualizar_asignacion",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/asignaciones-docente/{asignacion_id}"
+    },
+    {
+      "endpoint": "controllers.cursos_controller.listar_cursos",
+      "methods": [
+        "GET"
+      ],
+      "path": "/cursos"
+    },
+    {
+      "endpoint": "controllers.cursos_controller.obtener_curso",
+      "methods": [
+        "GET"
+      ],
+      "path": "/cursos/{curso_id}"
+    },
+    {
+      "endpoint": "controllers.cursos_controller.crear_curso",
+      "methods": [
+        "POST"
+      ],
+      "path": "/cursos"
+    },
+    {
+      "endpoint": "controllers.cursos_controller.actualizar_curso",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/cursos/{curso_id}"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.listar_cursos",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/cursos"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.listar_tareas",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/tareas"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.obtener_tarea",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/tareas/{tarea_id}"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.crear_tarea",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/tareas"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.listar_entregas",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/entregas"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.enviar_entrega",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/entregas"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.mis_entregas",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/mis-entregas/{estudiante_id}"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.resubir_entrega",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/entregas/{entrega_id}/resubir"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.revision_docente",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/aula-virtual/entregas/{entrega_id}/revision-docente"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.reintentar_ia",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/entregas/{entrega_id}/reintentar-ia"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.listar_unidades_curso",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/cursos/{curso_id}/unidades"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.listar_unidades_asignacion",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/asignaciones/{asignacion_id}/unidades"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.crear_unidad",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/unidades"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.actualizar_unidad",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/aula-virtual/unidades/{unidad_id}"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.listar_rubricas",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/rubricas"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.crear_rubrica",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/rubricas"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.actualizar_rubrica",
+      "methods": [
+        "PUT"
+      ],
+      "path": "/aula-virtual/rubricas/{rubrica_id}"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.listar_bloques_unidad",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/unidades/{unidad_id}/bloques"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.crear_bloque_unidad",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/unidades/{unidad_id}/bloques"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.actualizar_bloque",
+      "methods": [
+        "PUT"
+      ],
+      "path": "/aula-virtual/bloques/{bloque_id}"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.eliminar_bloque",
+      "methods": [
+        "DELETE"
+      ],
+      "path": "/aula-virtual/bloques/{bloque_id}"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.registrar_intento_bloque",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/bloques/{bloque_id}/intentos"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.registrar_retroalimentacion_bloque",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/bloques/{bloque_id}/retroalimentacion"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.subir_archivo_docente_bloque",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/bloques/{bloque_id}/archivo-docente"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.entregar_evidencia_bloque",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/bloques/{bloque_id}/entregar-evidencia"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.listar_entregas_bloque",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/bloques/{bloque_id}/entregas"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.descargar_archivo_aula",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/archivos/{archivo_id}/descargar"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.historial_bloque",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/bloques/{bloque_id}/historial"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.listar_entregas_bloque_detalle",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/bloques/{bloque_id}/entregas-detalle"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.registrar_acompanamiento_pedagogico",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/intentos/{intento_id}/acompanamientos"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.actualizar_estado_acompanamiento_pedagogico",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/acompanamientos/{acompanamiento_id}/estado"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.registrar_decision_posterior_acompanamiento",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/acompanamientos/{acompanamiento_id}/decision-posterior"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.listar_acompanamientos_pedagogicos",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/intentos/{intento_id}/acompanamientos"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_controller.registrar_revision_docente_entrega_individual",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/entregas/{intento_id}/revision-docente"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_reportes_controller.obtener_seguimiento_pedagogico",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/reportes/seguimiento-pedagogico"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_reportes_controller.obtener_consolidado_calificaciones",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/reportes/calificaciones"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_reportes_controller.obtener_cierre_academico_periodo",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/reportes/cierre-periodo"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_reportes_controller.obtener_reporte_institucional",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/reportes/institucional"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_reportes_controller.exportar_reporte_institucional",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/reportes/institucional/exportar"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_dua_controller.obtener_configuracion_dua_bloque",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/dua/bloques/{bloque_id}"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_dua_controller.guardar_configuracion_dua_bloque",
+      "methods": [
+        "PUT"
+      ],
+      "path": "/aula-virtual/dua/bloques/{bloque_id}"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_dua_controller.reemplazar_opciones_dua_bloque",
+      "methods": [
+        "PUT"
+      ],
+      "path": "/aula-virtual/dua/bloques/{bloque_id}/opciones"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_dua_controller.subir_archivo_recurso_dua",
+      "methods": [
+        "POST"
+      ],
+      "path": "/aula-virtual/dua/bloques/{bloque_id}/archivos"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_dua_controller.descargar_archivo_recurso_dua",
+      "methods": [
+        "GET"
+      ],
+      "path": "/aula-virtual/dua/archivos/{archivo_id}/descargar"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_dua_controller.reemplazar_recursos_dua_bloque",
+      "methods": [
+        "PUT"
+      ],
+      "path": "/aula-virtual/dua/bloques/{bloque_id}/recursos"
+    },
+    {
+      "endpoint": "controllers.aula_virtual_dua_controller.reemplazar_formatos_evidencia_dua_bloque",
+      "methods": [
+        "PUT"
+      ],
+      "path": "/aula-virtual/dua/bloques/{bloque_id}/formatos-evidencia"
+    },
+    {
+      "endpoint": "controllers.secciones_controller.listar_secciones",
+      "methods": [
+        "GET"
+      ],
+      "path": "/secciones"
+    },
+    {
+      "endpoint": "controllers.secciones_controller.obtener_seccion",
+      "methods": [
+        "GET"
+      ],
+      "path": "/secciones/{seccion_id}"
+    },
+    {
+      "endpoint": "controllers.secciones_controller.crear_seccion",
+      "methods": [
+        "POST"
+      ],
+      "path": "/secciones"
+    },
+    {
+      "endpoint": "controllers.secciones_controller.actualizar_seccion",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/secciones/{seccion_id}"
+    },
+    {
+      "endpoint": "controllers.grados_controller.listar_grados",
+      "methods": [
+        "GET"
+      ],
+      "path": "/grados"
+    },
+    {
+      "endpoint": "controllers.grados_controller.obtener_grado",
+      "methods": [
+        "GET"
+      ],
+      "path": "/grados/{grado_id}"
+    },
+    {
+      "endpoint": "controllers.grados_controller.crear_grado",
+      "methods": [
+        "POST"
+      ],
+      "path": "/grados"
+    },
+    {
+      "endpoint": "controllers.grados_controller.actualizar_grado",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/grados/{grado_id}"
+    },
+    {
+      "endpoint": "controllers.periodos_academicos_controller.listar_periodos_academicos",
+      "methods": [
+        "GET"
+      ],
+      "path": "/periodos-academicos"
+    },
+    {
+      "endpoint": "controllers.periodos_academicos_controller.obtener_periodo_academico",
+      "methods": [
+        "GET"
+      ],
+      "path": "/periodos-academicos/{periodo_id}"
+    },
+    {
+      "endpoint": "controllers.periodos_academicos_controller.crear_periodo_academico",
+      "methods": [
+        "POST"
+      ],
+      "path": "/periodos-academicos"
+    },
+    {
+      "endpoint": "controllers.periodos_academicos_controller.actualizar_periodo_academico",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/periodos-academicos/{periodo_id}"
+    },
+    {
+      "endpoint": "controllers.horarios_academicos_controller.listar_horarios",
+      "methods": [
+        "GET"
+      ],
+      "path": "/horarios-academicos"
+    },
+    {
+      "endpoint": "controllers.horarios_academicos_controller.crear_horario",
+      "methods": [
+        "POST"
+      ],
+      "path": "/horarios-academicos"
+    },
+    {
+      "endpoint": "controllers.horarios_academicos_controller.actualizar_horario",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/horarios-academicos/{horario_id}"
+    },
+    {
+      "endpoint": "controllers.asistencia_academica_controller.crear_sesion",
+      "methods": [
+        "POST"
+      ],
+      "path": "/asistencia-academica/sesiones"
+    },
+    {
+      "endpoint": "controllers.asistencia_academica_controller.listar_sesiones",
+      "methods": [
+        "GET"
+      ],
+      "path": "/asistencia-academica/sesiones"
+    },
+    {
+      "endpoint": "controllers.asistencia_academica_controller.estudiantes_sesion",
+      "methods": [
+        "GET"
+      ],
+      "path": "/asistencia-academica/sesiones/{sesion_id}/estudiantes"
+    },
+    {
+      "endpoint": "controllers.asistencia_academica_controller.registrar_asistencia",
+      "methods": [
+        "PUT"
+      ],
+      "path": "/asistencia-academica/sesiones/{sesion_id}/asistencias"
+    },
+    {
+      "endpoint": "controllers.asistencia_academica_controller.registrar_masivo",
+      "methods": [
+        "POST"
+      ],
+      "path": "/asistencia-academica/sesiones/{sesion_id}/asistencias/masivo"
+    },
+    {
+      "endpoint": "controllers.asistencia_academica_controller.mi_asistencia",
+      "methods": [
+        "GET"
+      ],
+      "path": "/asistencia-academica/mi-asistencia"
+    },
+    {
+      "endpoint": "controllers.asistencia_academica_controller.crear_justificacion",
+      "methods": [
+        "POST"
+      ],
+      "path": "/asistencia-academica/asistencias/{asistencia_id}/justificaciones"
+    },
+    {
+      "endpoint": "controllers.asistencia_academica_controller.listar_justificaciones",
+      "methods": [
+        "GET"
+      ],
+      "path": "/asistencia-academica/justificaciones"
+    },
+    {
+      "endpoint": "controllers.asistencia_academica_controller.revisar_justificacion",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/asistencia-academica/justificaciones/{justificacion_id}/revision"
+    },
+    {
+      "endpoint": "controllers.asistencia_academica_controller.alertas_asistencia",
+      "methods": [
+        "GET"
+      ],
+      "path": "/asistencia-academica/alertas"
+    },
+    {
+      "endpoint": "controllers.asistencia_academica_controller.reporte_asistencia",
+      "methods": [
+        "GET"
+      ],
+      "path": "/asistencia-academica/reportes"
+    },
+    {
+      "endpoint": "controllers.incidencias_academicas_controller.crear_incidencia",
+      "methods": [
+        "POST"
+      ],
+      "path": "/incidencias-academicas"
+    },
+    {
+      "endpoint": "controllers.incidencias_academicas_controller.listar_incidencias",
+      "methods": [
+        "GET"
+      ],
+      "path": "/incidencias-academicas"
+    },
+    {
+      "endpoint": "controllers.incidencias_academicas_controller.reporte_incidencias",
+      "methods": [
+        "GET"
+      ],
+      "path": "/incidencias-academicas/reportes"
+    },
+    {
+      "endpoint": "controllers.incidencias_academicas_controller.catalogos_incidencias",
+      "methods": [
+        "GET"
+      ],
+      "path": "/incidencias-academicas/catalogos"
+    },
+    {
+      "endpoint": "controllers.incidencias_academicas_controller.sugerencias",
+      "methods": [
+        "GET"
+      ],
+      "path": "/incidencias-academicas/sugerencias"
+    },
+    {
+      "endpoint": "controllers.incidencias_academicas_controller.detalle_incidencia",
+      "methods": [
+        "GET"
+      ],
+      "path": "/incidencias-academicas/{incidencia_id}"
+    },
+    {
+      "endpoint": "controllers.incidencias_academicas_controller.crear_accion",
+      "methods": [
+        "POST"
+      ],
+      "path": "/incidencias-academicas/{incidencia_id}/acciones"
+    },
+    {
+      "endpoint": "controllers.incidencias_academicas_controller.listar_acciones",
+      "methods": [
+        "GET"
+      ],
+      "path": "/incidencias-academicas/{incidencia_id}/acciones"
+    },
+    {
+      "endpoint": "controllers.incidencias_academicas_controller.cambiar_estado",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/incidencias-academicas/{incidencia_id}/estado"
+    },
+    {
+      "endpoint": "controllers.apoderados_comunicacion_controller.listar_apoderados",
+      "methods": [
+        "GET"
+      ],
+      "path": "/apoderados"
+    },
+    {
+      "endpoint": "controllers.apoderados_comunicacion_controller.crear_apoderado",
+      "methods": [
+        "POST"
+      ],
+      "path": "/apoderados"
+    },
+    {
+      "endpoint": "controllers.apoderados_comunicacion_controller.actualizar_apoderado",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/apoderados/{apoderado_id}"
+    },
+    {
+      "endpoint": "controllers.apoderados_comunicacion_controller.apoderados_estudiante",
+      "methods": [
+        "GET"
+      ],
+      "path": "/estudiantes/{estudiante_id}/apoderados"
+    },
+    {
+      "endpoint": "controllers.apoderados_comunicacion_controller.relacionar_apoderado",
+      "methods": [
+        "POST"
+      ],
+      "path": "/estudiantes/{estudiante_id}/apoderados"
+    },
+    {
+      "endpoint": "controllers.apoderados_comunicacion_controller.crear_comunicacion",
+      "methods": [
+        "POST"
+      ],
+      "path": "/comunicaciones-institucionales"
+    },
+    {
+      "endpoint": "controllers.apoderados_comunicacion_controller.listar_comunicaciones",
+      "methods": [
+        "GET"
+      ],
+      "path": "/comunicaciones-institucionales"
+    },
+    {
+      "endpoint": "controllers.apoderados_comunicacion_controller.reporte_comunicaciones",
+      "methods": [
+        "GET"
+      ],
+      "path": "/comunicaciones-institucionales/reportes"
+    },
+    {
+      "endpoint": "controllers.apoderados_comunicacion_controller.detalle_comunicacion",
+      "methods": [
+        "GET"
+      ],
+      "path": "/comunicaciones-institucionales/{comunicacion_id}"
+    },
+    {
+      "endpoint": "controllers.apoderados_comunicacion_controller.actualizar_estado",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/comunicaciones-institucionales/{comunicacion_id}/estado"
+    },
+    {
+      "endpoint": "controllers.usuarios_controller.listar_usuarios",
+      "methods": [
+        "GET"
+      ],
+      "path": "/usuarios"
+    },
+    {
+      "endpoint": "controllers.usuarios_controller.obtener_usuario",
+      "methods": [
+        "GET"
+      ],
+      "path": "/usuarios/{usuario_id}"
+    },
+    {
+      "endpoint": "controllers.usuarios_controller.actualizar_email_usuario",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/usuarios/{usuario_id}"
+    },
+    {
+      "endpoint": "controllers.integracion_ia_controller.analizar_con_ollama",
+      "methods": [
+        "POST"
+      ],
+      "path": "/integracion-ia/ollama/analyze"
+    },
+    {
+      "endpoint": "controllers.integracion_ia_controller.analizar_con_chatgpt",
+      "methods": [
+        "POST"
+      ],
+      "path": "/integracion-ia/chatgpt/analyze"
+    },
+    {
+      "endpoint": "controllers.integracion_ia_controller.analizar_con_claude",
+      "methods": [
+        "POST"
+      ],
+      "path": "/integracion-ia/claude/analyze"
+    },
+    {
+      "endpoint": "controllers.integracion_ia_controller.crear_evaluacion_completa",
+      "methods": [
+        "POST"
+      ],
+      "path": "/integracion-ia/evaluaciones"
+    },
+    {
+      "endpoint": "controllers.integracion_ia_controller.validar_evaluacion_docente",
+      "methods": [
+        "PATCH"
+      ],
+      "path": "/integracion-ia/evaluaciones/{resultado_id}/validar"
+    },
+    {
+      "endpoint": "controllers.integracion_ia_controller.webhook_n8n",
+      "methods": [
+        "POST"
+      ],
+      "path": "/integracion-ia/n8n/webhook"
+    },
+    {
+      "endpoint": "controllers.integracion_ia_controller.sync_moodle_submission",
+      "methods": [
+        "POST"
+      ],
+      "path": "/integracion-ia/moodle/sync-submission"
+    },
+    {
+      "endpoint": "controllers.integracion_ia_controller.n8n_callback",
+      "methods": [
+        "POST"
+      ],
+      "path": "/integracion-ia/n8n/callback"
+    },
+    {
+      "endpoint": "controllers.ia_config_controller.IAConfigController._register_routes.<locals>.get_config",
+      "methods": [
+        "GET"
+      ],
+      "path": "/ia/config"
+    },
+    {
+      "endpoint": "controllers.ia_config_controller.IAConfigController._register_routes.<locals>.update_config",
+      "methods": [
+        "PUT"
+      ],
+      "path": "/ia/config"
+    },
+    {
+      "endpoint": "controllers.ia_config_controller.IAConfigController._register_routes.<locals>.get_usage",
+      "methods": [
+        "GET"
+      ],
+      "path": "/ia/config/usage"
+    },
+    {
+      "endpoint": "controllers.ia_config_controller.IAConfigController._register_routes.<locals>.health",
+      "methods": [
+        "GET"
+      ],
+      "path": "/ia/health"
+    },
+    {
+      "endpoint": "main.health",
+      "methods": [
+        "GET"
+      ],
+      "path": "/health"
+    },
+    {
+      "endpoint": "main.home",
+      "methods": [
+        "GET"
+      ],
+      "path": "/"
+    }
+  ]
+}

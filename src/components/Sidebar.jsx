@@ -2,11 +2,13 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 
 const NAV_ITEMS = [
+  { label:'Apoderados y comunicación', to:'/apoderados', group:'Académico', roles:['DIRECTOR','ADMIN','DOCENTE'],
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/></svg> },
   { label:'Panel Directivo', to:'/panel-director-kpi', group:'Inicio', roles:['DIRECTOR','ADMIN'],
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg> },
   { label:'Asistencia', to:'/asistencia', group:'Académico', roles:['DIRECTOR','ADMIN','DOCENTE'],
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><path d="M9 11l3 3L22 4" strokeLinecap="round" strokeLinejoin="round"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" strokeLinecap="round"/></svg> },
-  { label:'Evaluaciones', to:'/evaluaciones', group:'Académico', roles:['DIRECTOR','ADMIN','DOCENTE'],
+  { label:'Evaluaciones', to:'/evaluaciones', group:'Académico', roles:['DIRECTOR','ADMIN','DOCENTE','ESTUDIANTE'],
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" strokeLinecap="round"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4" strokeLinecap="round"/></svg> },
   { label:'Matrícula', to:'/matricula', group:'Académico', roles:['DIRECTOR','ADMIN'],
     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" strokeLinecap="round"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6" strokeLinecap="round"/></svg> },

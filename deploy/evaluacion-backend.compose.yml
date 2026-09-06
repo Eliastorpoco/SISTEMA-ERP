@@ -1,0 +1,3 @@
+services:
+  api:
+    image: erp-backend:evaluacion-p1-r2-20260906T025500Z
