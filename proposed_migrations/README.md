@@ -26,6 +26,9 @@ Conserva las FK existentes y no modifica datos. No añade RLS ni cambia los cont
 | SQL candidato: obligaciones válidas de tenants A y B | Ambas aceptadas |
 | SQL candidato: cruce de estudiante y cruce de concepto por separado | Ambos rechazados por la FK nueva correspondiente |
 | Archivo candidato: upgrade() mediante MigrationContext y Operations de Alembic | 4 restricciones creadas y validadas |
+| Grafo Alembic con catálogo y candidata | 15 revisiones, una raíz y una cabeza; huellas históricas verificadas |
+| Comando Alembic desde evaluacion_competencia_p1 hasta pensiones_tenant_fk_v1 | Upgrade completado; alembic_version actualizado; cuatro restricciones validadas |
+| Reversión de la prueba del comando | ROLLBACK de estructura y versión confirmado |
 | Fin de las pruebas de cambio | ROLLBACK; ausencia posterior de las cuatro restricciones candidatas comprobada |
 
 La prueba del SQL y la ejecución de upgrade() fueron pruebas separadas. El esquema restaurado no contenía filas productivas. La consulta de producción es una observación puntual, no una garantía sobre escrituras posteriores.
@@ -34,7 +37,7 @@ La prueba del SQL y la ejecución de upgrade() fueron pruebas separadas. El esqu
 
 La imagen API inspeccionada no incluía el paquete Alembic. Se creó una imagen de prueba independiente `erp-migration-test:20260920`, con Python 3.11, Alembic 1.16.5, SQLAlchemy 2.0.49 y psycopg2-binary 2.9.11; pip check terminó sin incompatibilidades.
 
-La ejecución usó la red del contenedor PostgreSQL aislado, raíz de solo lectura y únicamente la candidata montada en lectura. La API y la base productiva no se modificaron.
+La ejecución usó la red del contenedor PostgreSQL aislado, raíz de solo lectura y archivos montados en lectura (la candidata y, para la prueba del comando, el catálogo recuperado). La API y la base productiva no se modificaron.
 
 ## Integración pendiente
 
@@ -42,7 +45,7 @@ La revisión declara `down_revision = evaluacion_competencia_p1`. Su historia se
 
 Antes de desplegar:
 1. Integrar una única línea de revisiones y verificar la conexión y revisión efectivas de la base destino.
-2. Probar el recorrido con el comando Alembic y su tabla de versiones. La prueba realizada invocó upgrade() mediante la API de operaciones; no ejecutó el historial ni actualizó alembic_version.
+2. Preparar una configuración operativa revisada. Ya se probó el comando Alembic para avanzar desde evaluacion_competencia_p1 hasta la candidata y actualizar alembic_version. Se marcó exclusivamente la copia aislada del esquema actual, dentro de una transacción revertida. No se ejecutaron las 14 migraciones históricas ni se probó instalación desde cero.
 3. Volver a comprobar referencias y cruces, medir tamaños y planificar los bloqueos de ALTER TABLE. Los límites locales de espera son 5 s para locks y 30 s por sentencia; deben revisarse con datos representativos.
 4. Ejecutar en una transacción PostgreSQL. El rollback probado fue transaccional, no la función downgrade(), que está bloqueada explícitamente.
 5. Revisar compatibilidad de escrituras de la aplicación y obtener aprobación explícita para producción.
