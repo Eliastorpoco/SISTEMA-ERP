@@ -1,0 +1,29 @@
+name: Validar catálogo de migraciones
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ERP_catalogo_recuperado_20260920/**'
+      - '.github/workflows/migration-catalog.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-catalog:
+    name: Catálogo y pruebas estáticas
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: ERP_catalogo_recuperado_20260920
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Validar huellas y cadena de revisiones
+        run: python3 -B validate_catalog.py
+      - name: Ejecutar pruebas del validador
+        run: python3 -B -m unittest -v test_validator.py

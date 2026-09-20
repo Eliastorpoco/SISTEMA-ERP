@@ -1,0 +1,103 @@
+{
+  "format_version": 1,
+  "migrations": [
+    {
+      "file": "20260813_rubrica_estructurada_v1a_nucleo_datos.py",
+      "sha256": "81095796cd4e26c91cc0042f0b5dabd9f28c0985d63b845be2e11bf3afb7dfe6",
+      "revision": "rubrica_estructurada_v1a",
+      "down_revision": "production_baseline_20260814",
+      "source": "erp_api:/app/alembic/versions_production"
+    },
+    {
+      "file": "20260814_nucleo_academico_minimo_v1jd.py",
+      "sha256": "bee39029f7989db76e6c20e7e89cdf446a7ff74eae360cb4bfc6f3354e4b54fd",
+      "revision": "nucleo_academico_minimo_v1jd",
+      "down_revision": "secuencia_unidades_v1ja",
+      "source": "erp_api:/app/alembic/versions_production"
+    },
+    {
+      "file": "20260814_secuencia_unidades_v1ja.py",
+      "sha256": "6c4561581c6844ae3e2a2117a1aa21d28a5b90dea3aa9cc81fcc389617ed64a9",
+      "revision": "secuencia_unidades_v1ja",
+      "down_revision": "rubrica_estructurada_v1a",
+      "source": "erp_api:/app/alembic/versions_production"
+    },
+    {
+      "file": "20260815_matricula_canonica_minima_v1ka.py",
+      "sha256": "f14c73e616cb79023ad941a2ecce18ed3d7d9891122142cb5957600dc460227c",
+      "revision": "matricula_canonica_minima_v1ka",
+      "down_revision": "vinculo_unidad_asignacion_v1je",
+      "source": "erp_api:/app/alembic/versions_production"
+    },
+    {
+      "file": "20260815_vinculo_unidad_asignacion_v1je.py",
+      "sha256": "2d00d02b49b8835d4510792c742293b10f5b81f6332f3a56fb1514de284036d9",
+      "revision": "vinculo_unidad_asignacion_v1je",
+      "down_revision": "nucleo_academico_minimo_v1jd",
+      "source": "erp_api:/app/alembic/versions_production"
+    },
+    {
+      "file": "20260816_apoderados_comunicacion_v1mf.py",
+      "sha256": "8dc68dc8bc764031cb11777349567280c909eea55b696b904a9b448847b61033",
+      "revision": "apoderados_comunicacion_v1mf",
+      "down_revision": "incidencias_tutoria_v1me",
+      "source": "erp_api:/app/alembic/versions_production"
+    },
+    {
+      "file": "20260816_asistencia_academica_v1mc.py",
+      "sha256": "eca8064058a9966030e0e9d66a3ec3a34bb18e4251f594640c81b4f631e57aac",
+      "revision": "asistencia_academica_v1mc",
+      "down_revision": "programacion_horarios_v1mb",
+      "source": "erp_api:/app/alembic/versions_production"
+    },
+    {
+      "file": "20260816_finanzas_integraciones_v1n.py",
+      "sha256": "7212d7c35312d4580802101c31e912bf1e5efe1619bcfcdb31c7745b5f400a98",
+      "revision": "finanzas_integraciones_v1n",
+      "down_revision": "apoderados_comunicacion_v1mf",
+      "source": "erp_api:/app/alembic/versions_production"
+    },
+    {
+      "file": "20260816_incidencias_tutoria_v1me.py",
+      "sha256": "ec8c7e69c98b5e1270220909c53b6e89f8b2629ebe027598ea59282428196b19",
+      "revision": "incidencias_tutoria_v1me",
+      "down_revision": "justificaciones_asistencia_v1md",
+      "source": "erp_api:/app/alembic/versions_production"
+    },
+    {
+      "file": "20260816_justificaciones_asistencia_v1md.py",
+      "sha256": "09fcd84ef9eb2388bc8a575cb6be0e54493603d9261b01949b0b660613d79519",
+      "revision": "justificaciones_asistencia_v1md",
+      "down_revision": "asistencia_academica_v1mc",
+      "source": "erp_api:/app/alembic/versions_production"
+    },
+    {
+      "file": "20260816_programacion_horarios_v1mb.py",
+      "sha256": "41c1e6c45ce6abb08fc3e5db4c3966582bde4c771e3251e0a387cc7452eb0709",
+      "revision": "programacion_horarios_v1mb",
+      "down_revision": "matricula_canonica_minima_v1ka",
+      "source": "erp_api:/app/alembic/versions_production"
+    },
+    {
+      "file": "20260823_v1q_mora_calendario_expand.py",
+      "sha256": "7ed83967fef15bd91f64075eb9ddadf879b5605a2aa9db924b96bb61865756e3",
+      "revision": "v1q_mora_calendario_expand",
+      "down_revision": "finanzas_integraciones_v1n",
+      "source": "git:da991c76f7b62b429ef76843278b005ecb6b9f5e"
+    },
+    {
+      "file": "20260906_evaluacion_competencia_p1.py",
+      "sha256": "2af4867e37e5ee10d982b7dc9d586b1fccd69213c424be8ebbdf4c12d94111b5",
+      "revision": "evaluacion_competencia_p1",
+      "down_revision": "v1q_mora_calendario_expand",
+      "source": "erp_api:/app/alembic/versions_production"
+    },
+    {
+      "file": "production_baseline_20260814.py",
+      "sha256": "8bc58456bbb29199b763ca47f1dec06644d68b3847e1ae9d43c10d3ee49c1453",
+      "revision": "production_baseline_20260814",
+      "down_revision": null,
+      "source": "erp_api:/app/alembic/versions_production"
+    }
+  ]
+}
