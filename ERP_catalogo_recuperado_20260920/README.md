@@ -22,6 +22,10 @@ En PowerShell puede usarse `py -3 -B validate_catalog.py`.
 
 El validador solo lee archivos y analiza sintaxis con AST. No importa módulos de migraciones, no necesita Alembic, no abre conexiones y no modifica archivos. Devuelve código 0 si pasa y 1 si falla.
 
+## Validación automática
+
+El workflow `.github/workflows/migration-catalog.yml` ejecuta el validador y sus cuatro pruebas en las pull requests hacia `main` que cambien este catálogo o el propio workflow. Usa Python 3 del runner y solo la biblioteca estándar, con permisos de lectura del repositorio. No ejecuta Alembic, SQL ni despliegues. El resultado de cada ejecución se consulta en Checks de la PR.
+
 ## Límites obligatorios
 
 - El baseline es no-op: requiere un esquema preexistente. No permite instalación desde cero.
@@ -30,7 +34,7 @@ El validador solo lee archivos y analiza sintaxis con AST. No importa módulos d
 - No se incluye alembic.ini ni env.py: este es un catálogo separado, no una configuración operativa.
 - No mezclar `migrations` con múltiples copias de las mismas revisiones presentes en otros directorios del repositorio.
 - No usar git add . sobre el worktree de recuperación; contiene otras copias y evidencia histórica.
-- No se han ejecutado pruebas SQL ni se ha publicado o creado un commit.
+- El catálogo está publicado en la rama `recovery/migration-catalog-only-20260920` y propuesto en la PR #1. No se han ejecutado pruebas SQL ni desplegado estas migraciones.
 
 ## Hallazgos pendientes
 
@@ -45,7 +49,7 @@ El validador solo lee archivos y analiza sintaxis con AST. No importa módulos d
 
 ## Secuencia de integración pendiente
 
-Revisar el paquete; acordar una ubicación única del catálogo en el repositorio; preparar configuración aislada y esquema previo verificable; probar contra PostgreSQL de prueba sin datos personales; revisar diferencias y secretos del conjunto a publicar; solicitar aprobación explícita antes de commit/push/despliegue. Mantener intactas las migraciones recuperadas: correcciones futuras van en nuevas revisiones.
+Revisar el paquete; acordar una ubicación única del catálogo en el repositorio; preparar configuración aislada y esquema previo verificable; probar contra PostgreSQL de prueba sin datos personales; revisar diferencias y secretos de futuros cambios; solicitar aprobación explícita antes de fusionar o desplegar. Mantener intactas las migraciones recuperadas: correcciones futuras van en nuevas revisiones.
 
 La consulta previa de asistencia_db registró evaluacion_competencia_p1 y comprobó tres columnas V1Q y dos restricciones; no certificó todo el esquema ni demostró que esa sea la conexión efectiva de la API.
 
