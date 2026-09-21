@@ -41,13 +41,17 @@ La ejecución usó la red del contenedor PostgreSQL aislado, raíz de solo lectu
 
 ## Integración pendiente
 
-La revisión declara `down_revision = evaluacion_competencia_p1`. Su historia se recupera en la PR #1. Esta carpeta es una propuesta separada: no está conectada a una configuración Alembic operativa ni habilita despliegues.
+La revisión declara `down_revision = evaluacion_competencia_p1`. Su historia se recupera en la PR #1. Esta carpeta sigue siendo una propuesta separada. Se añade `proposed_alembic_runtime/` con configuración independiente y preparación verificable de revisiones; no habilita despliegues.
 
 Antes de desplegar:
 1. Integrar una única línea de revisiones y verificar la conexión y revisión efectivas de la base destino.
-2. Preparar una configuración operativa revisada. Ya se probó el comando Alembic para avanzar desde evaluacion_competencia_p1 hasta la candidata y actualizar alembic_version. Se marcó exclusivamente la copia aislada del esquema actual, dentro de una transacción revertida. No se ejecutaron las 14 migraciones históricas ni se probó instalación desde cero.
+2. Completar la revisión de la configuración candidata en `proposed_alembic_runtime/` y probar su rama de conexión autónoma desde DATABASE_URL. Ya se probó el comando Alembic para avanzar desde evaluacion_competencia_p1 hasta la candidata y actualizar alembic_version. Se marcó exclusivamente la copia aislada del esquema actual, dentro de una transacción revertida. No se ejecutaron las 14 migraciones históricas ni se probó instalación desde cero.
 3. Volver a comprobar referencias y cruces, medir tamaños y planificar los bloqueos de ALTER TABLE. Los límites locales de espera son 5 s para locks y 30 s por sentencia; deben revisarse con datos representativos.
 4. Ejecutar en una transacción PostgreSQL. El rollback probado fue transaccional, no la función downgrade(), que está bloqueada explícitamente.
 5. Revisar compatibilidad de escrituras de la aplicación y obtener aprobación explícita para producción.
 
 No se conserva el dump SQL en esta PR. Las migraciones históricas y su manifiesto de la PR #1 permanecen intactos.
+
+## Actualización del 21/09/2026
+
+El usuario confirmó en el VPS que el entorno guardado ejecutó stamp + upgrade sobre la base aislada, actualizó la versión, creó las cuatro restricciones en sus tablas y revirtió estructura y versión. En producción, consultas de solo lectura observaron revisión evaluacion_competencia_p1, columnas implicadas NOT NULL y ausencia de las restricciones nuevas. La conexión construida desde DATABASE_URL dentro de erp_api llegó a asistencia_db. Ver `../proposed_alembic_runtime/README.md` para el alcance exacto, preparación y pendientes. No se necesita stamp productivo.
