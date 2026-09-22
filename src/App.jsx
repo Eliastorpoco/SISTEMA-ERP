@@ -45,7 +45,7 @@ const privateRoutes = [
   { path: 'dashboard', element: <DashboardSegunRol />, roles: [Rol.ADMIN, Rol.DOCENTE, Rol.ESTUDIANTE] },
   { path: 'panel-director', element: <PanelDirector />, roles: [Rol.ADMIN] },
   // Nuevas rutas
-  { path: 'panel-director-kpi', element: <PanelDirectorKPI />, roles: [Rol.ADMIN] },
+  { path: 'panel-director-kpi', element: <PanelDirectorKPI />, roles: [Rol.DIRECTOR, Rol.ADMIN] },
   { path: 'finanzas', element: <Finanzas />, roles: [Rol.DIRECTOR, Rol.ADMIN, Rol.ESTUDIANTE] },
   { path: 'notificaciones', element: <Notificaciones />, roles: [Rol.ADMIN, Rol.DOCENTE] },
 
