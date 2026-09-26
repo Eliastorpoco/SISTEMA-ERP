@@ -116,13 +116,13 @@ export default function UniversalLearningBlock({
   const [cargandoRespuestasActividadDocente, setCargandoRespuestasActividadDocente] = useState(false);
   const [entregaSeleccionada, setEntregaSeleccionada] = useState(null);
   const [revisionForm, setRevisionForm] = useState({
-    puntaje: 80,
-    nivel_logro: "Logro Esperado",
-    estado_revision: "Revisado por docente",
-    decision_docente: "Aprobado",
+    puntaje: "",
+    nivel_logro: "",
+    estado_revision: "",
+    decision_docente: "",
     observacion_docente: "",
     retroalimentacion_ia: "",
-    enviado_estudiante: true,
+    enviado_estudiante: false,
   });
   const [guardandoRevisionEntrega, setGuardandoRevisionEntrega] = useState(false);
   const [mensajeRevisionEntrega, setMensajeRevisionEntrega] = useState("");
@@ -704,7 +704,7 @@ export default function UniversalLearningBlock({
                           Nivel de logro
                           <select
                             value={revisionForm.nivel_logro}
-                            onChange={(event) => actualizarRevisionForm("nivel_logro", event.target.value)}
+                            disabled
                             style={{
                               border: "1px solid #bbf7d0",
                               borderRadius: "10px",
@@ -712,6 +712,7 @@ export default function UniversalLearningBlock({
                               fontFamily: "inherit",
                             }}
                           >
+                            <option value="">Pendiente de puntaje</option>
                             <option>En Inicio</option>
                             <option>En Proceso</option>
                             <option>Logro Esperado</option>
@@ -731,6 +732,7 @@ export default function UniversalLearningBlock({
                               fontFamily: "inherit",
                             }}
                           >
+                            <option value="">Selecciona decisión</option>
                             <option>Aprobado</option>
                             <option>Observado</option>
                             <option>Pedir resubida</option>
@@ -822,25 +824,51 @@ export default function UniversalLearningBlock({
     setEntregaSeleccionada(entrega);
     setMensajeRevisionEntrega("");
 
-    const puntaje = Number(entrega?.puntaje ?? 80);
-    const nivel = entrega?.nivel_logro || calcularNivelMINEDU(puntaje);
+    const tieneRevisionPersistida = Boolean(entrega?.revision_id);
+    const tienePuntajePersistido = Boolean(
+      tieneRevisionPersistida &&
+      entrega?.puntaje !== null &&
+      entrega?.puntaje !== undefined &&
+      String(entrega.puntaje).trim() !== ""
+    );
+
+    const puntaje = tienePuntajePersistido
+      ? String(entrega.puntaje)
+      : "";
+
+    const nivel = tienePuntajePersistido
+      ? (
+          entrega?.nivel_logro ||
+          calcularNivelMINEDU(Number(entrega.puntaje))
+        )
+      : "";
 
     setRevisionForm({
       puntaje,
       nivel_logro: nivel,
-      estado_revision: entrega?.estado_revision === "Entrega con archivo"
-        ? "Revisado por docente"
-        : entrega?.estado_revision || "Revisado por docente",
-      decision_docente: entrega?.decision_docente || "Aprobado",
-      observacion_docente:
-        entrega?.observacion_docente ||
-        entrega?.payload?.observacionDocente ||
-        "Entrega revisada individualmente por el docente.",
-      retroalimentacion_ia:
-        entrega?.retroalimentacion_ia ||
-        entrega?.payload?.retroalimentacion ||
-        "Buen trabajo. Tu evidencia demuestra comprensión del propósito planteado.",
-      enviado_estudiante: entrega?.enviado_estudiante ?? true,
+      estado_revision: tieneRevisionPersistida
+        ? entrega?.estado_revision || "Revisado por docente"
+        : "",
+      decision_docente: tieneRevisionPersistida
+        ? entrega?.decision_docente || ""
+        : "",
+      observacion_docente: tieneRevisionPersistida
+        ? (
+            entrega?.observacion_docente ||
+            entrega?.payload?.observacionDocente ||
+            ""
+          )
+        : "",
+      retroalimentacion_ia: tieneRevisionPersistida
+        ? (
+            entrega?.retroalimentacion_ia ||
+            entrega?.payload?.retroalimentacion ||
+            ""
+          )
+        : "",
+      enviado_estudiante: tieneRevisionPersistida
+        ? Boolean(entrega?.enviado_estudiante)
+        : false,
     });
   };
 
@@ -852,8 +880,20 @@ export default function UniversalLearningBlock({
       };
 
       if (campo === "puntaje") {
-        const puntaje = Number(valor || 0);
-        next.nivel_logro = calcularNivelMINEDU(puntaje);
+        const texto = String(valor ?? "");
+        next.puntaje = texto;
+
+        if (!texto.trim()) {
+          next.nivel_logro = "";
+        } else {
+          const puntaje = Number(texto);
+          next.nivel_logro =
+            Number.isFinite(puntaje) &&
+            puntaje >= 0 &&
+            puntaje <= 100
+              ? calcularNivelMINEDU(puntaje)
+              : "";
+        }
       }
 
       return next;
@@ -866,17 +906,57 @@ export default function UniversalLearningBlock({
       return;
     }
 
+    if (data?.rubrica_id || data?.rubrica?.id) {
+      setMensajeRevisionEntrega(
+        "Esta actividad utiliza una rúbrica. Completa la evaluación por criterios antes de guardar."
+      );
+      return;
+    }
+
+    const puntajeTexto = String(revisionForm.puntaje ?? "").trim();
+
+    if (!puntajeTexto) {
+      setMensajeRevisionEntrega("Ingresa un puntaje antes de guardar la revisión.");
+      return;
+    }
+
+    const puntajeRevision = Number(puntajeTexto);
+
+    if (
+      !Number.isFinite(puntajeRevision) ||
+      puntajeRevision < 0 ||
+      puntajeRevision > 100
+    ) {
+      setMensajeRevisionEntrega("El puntaje debe estar entre 0 y 100.");
+      return;
+    }
+
+    const decisionRevision = String(
+      revisionForm.decision_docente || ""
+    ).trim();
+
+    if (!decisionRevision) {
+      setMensajeRevisionEntrega("Selecciona una decisión docente.");
+      return;
+    }
+
+    const nivelRevision = calcularNivelMINEDU(puntajeRevision);
+
     try {
       setGuardandoRevisionEntrega(true);
       setMensajeRevisionEntrega("Guardando revisión docente...");
 
       const payload = {
-        puntaje: Number(revisionForm.puntaje || 0),
-        nivel_logro: revisionForm.nivel_logro,
-        estado_revision: revisionForm.estado_revision,
-        decision_docente: revisionForm.decision_docente,
-        observacion_docente: revisionForm.observacion_docente,
-        retroalimentacion_ia: revisionForm.retroalimentacion_ia,
+        puntaje: puntajeRevision,
+        nivel_logro: nivelRevision,
+        estado_revision: "Revisado por docente",
+        decision_docente: decisionRevision,
+        observacion_docente: String(
+          revisionForm.observacion_docente || ""
+        ).trim(),
+        retroalimentacion_ia: String(
+          revisionForm.retroalimentacion_ia || ""
+        ).trim(),
         enviado_estudiante: Boolean(revisionForm.enviado_estudiante),
       };
 
@@ -3556,7 +3636,7 @@ export default function UniversalLearningBlock({
                                 Nivel de logro
                                 <select
                                   value={revisionForm.nivel_logro}
-                                  onChange={(e) => actualizarRevisionForm("nivel_logro", e.target.value)}
+                                  disabled
                                   style={{
                                     border: "1px solid #cbd5e1",
                                     borderRadius: "10px",
@@ -3564,6 +3644,7 @@ export default function UniversalLearningBlock({
                                     fontFamily: "inherit",
                                   }}
                                 >
+                                  <option value="">Pendiente de puntaje</option>
                                   <option>En Inicio</option>
                                   <option>En Proceso</option>
                                   <option>Logro Esperado</option>
@@ -3583,6 +3664,7 @@ export default function UniversalLearningBlock({
                                     fontFamily: "inherit",
                                   }}
                                 >
+                                  <option value="">Selecciona decisión</option>
                                   <option>Aprobado</option>
                                   <option>Observado</option>
                                   <option>Requiere mejora</option>
